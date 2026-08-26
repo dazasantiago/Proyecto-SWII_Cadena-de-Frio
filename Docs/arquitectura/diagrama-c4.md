@@ -31,7 +31,7 @@ Los requisitos no funcionales del proyecto apuntan directamente a **EDA + micros
 | Detección de Alertas | Alerta | HU-03 |
 | Notificaciones | — | HU-04, HU-05 |
 
-> **Supuesto de diseño — rol Conductor.** `Requisitos_G6.md` lista "Conductor / transportista" como actor en la narrativa, pero ninguna de las 9 HU está escrita desde su punto de vista (todas son del Operador logístico, el Sensor IoT, el Sistema o el Cliente). El contenedor **App Móvil Conductor** ("consulta el envío asignado") es una inferencia razonable, no un requisito explícito — queda pendiente confirmar su alcance real con el asesor/docente antes de comprometerlo en una entrega.
+> **Supuesto de diseño — rol Conductor.** `Requisitos_G6.md` lista "Conductor / transportista" como actor en la narrativa, pero ninguna de las 9 HU está escrita desde su punto de vista (todas son del Operador logístico, el Sensor IoT, el Sistema o el Cliente). Que el conductor consulte su envío asignado desde la misma **Aplicación Web** que usan operador y cliente es una inferencia razonable, no un requisito explícito — queda pendiente confirmar su alcance real con el asesor/docente antes de comprometerlo en una entrega.
 
 ## C1 — Diagrama de Contexto
 
@@ -59,7 +59,7 @@ C4Context
 
 ## C2 — Diagrama de Contenedores (vista completa)
 
-Los 12 contenedores del sistema en un solo diagrama. Es la referencia completa, pero al mezclar el flujo síncrono (persona → API Gateway → servicio) con el flujo asíncrono (sensor → Kafka → consumidores) las líneas se cruzan bastante — Kafka concentra 7 relaciones y el layout automático de Mermaid no tiene ruteo inteligente de líneas. Para lectura y presentación, usar las dos vistas enfocadas de las secciones C2a/C2b, que son el mismo modelo separado por pregunta ("¿cómo interactúa una persona?" vs. "¿cómo se convierte una lectura en una alerta?").
+Versión simplificada para el alcance de un proyecto universitario: **una sola aplicación de usuario** (operador, cliente y conductor comparten la misma app web — no hay app móvil separada) y **sin API Gateway como contenedor propio**: la app web llama directamente a los dos servicios con los que interactúa una persona (Envíos y Consultas). El broker MQTT tampoco es un contenedor aparte — se modela como el listener MQTT embebido del Servicio de Ingesta, que es la única pieza que le habla a los sensores. Quedan 9 contenedores: 1 de interfaz, 4 servicios de dominio, el bus de eventos y 3 bases de datos.
 
 ```mermaid
 C4Container
@@ -72,18 +72,15 @@ C4Container
     System_Ext(notif, "Gateway de Notificaciones")
 
     System_Boundary(sistema, "Sistema de Cadena de Frío") {
-        Container(webApp, "Portal Web", "SPA (React/Angular)", "Dashboard de envíos, alertas e historial para operador y cliente")
-        Container(mobileApp, "App Móvil Conductor", "React Native / Flutter", "Consulta del envío asignado en ruta")
-        Container(apiGateway, "API Gateway", "Spring Cloud Gateway", "Enrutamiento, autenticación y agregación para los clientes externos")
+        Container(webApp, "Aplicación Web", "SPA (React/Angular)", "Dashboard de envíos, alertas e historial para operador y cliente; consulta del envío asignado para el conductor")
 
-        Container(ingestion, "Servicio de Ingesta", "Spring Boot", "Recibe lecturas del broker MQTT y las publica en el bus de eventos")
+        Container(ingestion, "Servicio de Ingesta", "Spring Boot + listener MQTT embebido", "Recibe lecturas directo de los sensores y las publica en el bus de eventos")
         Container(shipmentSvc, "Servicio de Envíos", "Spring Boot (hexagonal)", "Ciclo de vida del envío, condiciones requeridas, incidentes, saga de cierre")
         Container(alertSvc, "Servicio de Detección de Alertas", "Spring Boot (stream processor)", "Evalúa cada lectura contra la condición requerida y genera alertas")
         Container(notifSvc, "Servicio de Notificaciones", "Spring Boot", "Despacha alertas a operador y cliente en tiempo real")
         Container(queryApi, "Servicio de Consultas", "Spring Boot", "Lado de lectura CQRS: historial, estado actual, dashboards")
 
         Container(broker, "Bus de Eventos", "Apache Kafka", "LecturaRecibida, AlertaGenerada, EnvioRegistrado, EnvioCerrado")
-        Container(mqtt, "Broker MQTT", "EMQX / Mosquitto", "Punto de entrada de telemetría IoT")
 
         ContainerDb(shipmentDb, "BD Envíos", "PostgreSQL", "Envíos, condiciones requeridas, incidentes")
         ContainerDb(alertDb, "BD Alertas", "PostgreSQL", "Alertas y su estado de resolución")
@@ -92,16 +89,12 @@ C4Container
 
     Rel(operador, webApp, "Usa", "HTTPS")
     Rel(cliente, webApp, "Usa", "HTTPS")
-    Rel(conductor, mobileApp, "Usa", "HTTPS")
-    Rel(sensorIot, mqtt, "Publica lecturas", "MQTT")
+    Rel(conductor, webApp, "Usa", "HTTPS")
+    Rel(sensorIot, ingestion, "Publica lecturas", "MQTT")
 
-    Rel(webApp, apiGateway, "Llama", "HTTPS/JSON")
-    Rel(mobileApp, apiGateway, "Llama", "HTTPS/JSON")
+    Rel(webApp, shipmentSvc, "Registra/cierra envíos, reporta incidentes", "HTTPS/JSON")
+    Rel(webApp, queryApi, "Consulta historial, estado, dashboards", "HTTPS/JSON")
 
-    Rel(apiGateway, shipmentSvc, "Registra/cierra envíos, reporta incidentes", "HTTPS/JSON")
-    Rel(apiGateway, queryApi, "Consulta historial, estado, dashboards", "HTTPS/JSON")
-
-    Rel(mqtt, ingestion, "Entrega lecturas", "MQTT")
     Rel(ingestion, broker, "Publica LecturaRecibida", "Kafka")
 
     Rel(broker, alertSvc, "Consume LecturaRecibida", "Kafka")
@@ -125,9 +118,11 @@ C4Container
     UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")
 ```
 
+Aun así, Kafka concentra 6 relaciones y mezcla el flujo síncrono (persona → app web → servicio) con el asíncrono (sensor → Kafka → consumidores), así que para lectura y presentación conviene usar las dos vistas enfocadas de C2a/C2b — el mismo modelo separado por pregunta ("¿cómo interactúa una persona?" vs. "¿cómo se convierte una lectura en una alerta?").
+
 ## C2a — Vista: Flujo de negocio (síncrono)
 
-Responde "¿cómo interactúa una persona con el sistema?": operador y cliente por el portal web, conductor por la app móvil, todo pasando por el API Gateway hacia los servicios de Envíos y Consultas. Incluye la llamada síncrona de la saga de cierre (`shipmentSvc → alertSvc`).
+Responde "¿cómo interactúa una persona con el sistema?": operador, cliente y conductor usan la misma app web, que llama directo a los servicios de Envíos y Consultas. Incluye la llamada síncrona de la saga de cierre (`shipmentSvc → alertSvc`).
 
 ```mermaid
 C4Container
@@ -138,9 +133,7 @@ C4Container
     Person(conductor, "Conductor / transportista")
 
     System_Boundary(sistema, "Sistema de Cadena de Frío") {
-        Container(webApp, "Portal Web", "SPA (React/Angular)", "Dashboard de envíos, alertas e historial")
-        Container(mobileApp, "App Móvil Conductor", "React Native / Flutter", "Consulta del envío asignado en ruta")
-        Container(apiGateway, "API Gateway", "Spring Cloud Gateway", "Enrutamiento y autenticación")
+        Container(webApp, "Aplicación Web", "SPA (React/Angular)", "Dashboard de envíos, alertas e historial; consulta del envío asignado para el conductor")
         Container(shipmentSvc, "Servicio de Envíos", "Spring Boot (hexagonal)", "Ciclo de vida del envío, saga de cierre")
         Container(alertSvc, "Servicio de Detección de Alertas", "Spring Boot (stream processor)", "Consultado por la saga de cierre")
         Container(queryApi, "Servicio de Consultas", "Spring Boot", "Lado de lectura CQRS")
@@ -152,13 +145,10 @@ C4Container
 
     Rel(operador, webApp, "Usa", "HTTPS")
     Rel(cliente, webApp, "Usa", "HTTPS")
-    Rel(conductor, mobileApp, "Usa", "HTTPS")
+    Rel(conductor, webApp, "Usa", "HTTPS")
 
-    Rel(webApp, apiGateway, "Llama", "HTTPS/JSON")
-    Rel(mobileApp, apiGateway, "Llama", "HTTPS/JSON")
-
-    Rel(apiGateway, shipmentSvc, "Registra/cierra envíos, reporta incidentes", "HTTPS/JSON")
-    Rel(apiGateway, queryApi, "Consulta historial, estado, dashboards", "HTTPS/JSON")
+    Rel(webApp, shipmentSvc, "Registra/cierra envíos, reporta incidentes", "HTTPS/JSON")
+    Rel(webApp, queryApi, "Consulta historial, estado, dashboards", "HTTPS/JSON")
 
     Rel(shipmentSvc, shipmentDb, "Lee/escribe", "JDBC")
     Rel(shipmentSvc, alertSvc, "Consulta alertas críticas sin resolver (saga de cierre)", "HTTPS/REST síncrono")
@@ -172,7 +162,7 @@ C4Container
 
 ## C2b — Vista: Flujo de telemetría y alertas (event-driven)
 
-Responde "¿cómo se convierte una lectura de sensor en una alerta notificada?": desde el sensor hasta la notificación, todo mediado por el bus de eventos.
+Responde "¿cómo se convierte una lectura de sensor en una alerta notificada?": desde el sensor hasta la notificación, todo mediado por el bus de eventos. El sensor le habla directo al Servicio de Ingesta por MQTT (sin broker MQTT como contenedor aparte).
 
 ```mermaid
 C4Container
@@ -182,8 +172,7 @@ C4Container
     System_Ext(notif, "Gateway de Notificaciones")
 
     System_Boundary(sistema, "Sistema de Cadena de Frío") {
-        Container(mqtt, "Broker MQTT", "EMQX / Mosquitto", "Punto de entrada de telemetría IoT")
-        Container(ingestion, "Servicio de Ingesta", "Spring Boot", "Valida y publica lecturas")
+        Container(ingestion, "Servicio de Ingesta", "Spring Boot + listener MQTT embebido", "Valida y publica lecturas")
         Container(broker, "Bus de Eventos", "Apache Kafka", "LecturaRecibida, AlertaGenerada, EnvioRegistrado, EnvioCerrado")
         Container(shipmentSvc, "Servicio de Envíos", "Spring Boot (hexagonal)", "Publica EnvioRegistrado/Cerrado")
         Container(alertSvc, "Servicio de Detección de Alertas", "Spring Boot (stream processor)", "Evalúa lecturas y genera alertas")
@@ -195,8 +184,7 @@ C4Container
         ContainerDb(tsDb, "BD Series de Tiempo", "TimescaleDB / InfluxDB", "Histórico de lecturas de sensores")
     }
 
-    Rel(sensorIot, mqtt, "Publica lecturas", "MQTT")
-    Rel(mqtt, ingestion, "Entrega lecturas", "MQTT")
+    Rel(sensorIot, ingestion, "Publica lecturas", "MQTT")
     Rel(ingestion, broker, "Publica LecturaRecibida", "Kafka")
     Rel(shipmentSvc, broker, "Publica EnvioRegistrado / EnvioCerrado", "Kafka")
 
@@ -239,3 +227,5 @@ No se generó todavía el nivel de Componentes (C3) ni las vistas complementaria
 **2. Acceso directo de Envíos a la base de datos de Alertas.** Antes, la verificación de "alertas críticas sin resolver" en la saga de cierre (HU-08) se modeló como `shipmentSvc` leyendo `alertDb` por JDBC — rompe el principio de que cada microservicio es dueño exclusivo de su base de datos, y acopla el esquema interno de Alertas a Envíos. Se corrigió a una **llamada síncrona de servicio a servicio** (`shipmentSvc → alertSvc` por REST): Envíos le pregunta a Alertas por su API, no por su base de datos. Queda como alternativa válida a futuro un enfoque coreografiado (Alertas publica eventos de resolución/generación, y Envíos mantiene una vista local de "alertas críticas abiertas por envío"), que evitaría la dependencia síncrona entre ambos servicios a costa de una consistencia con más retraso — no se aplicó todavía por ser más compleja de razonar para esta etapa del proyecto.
 
 **3. Pendiente — lecturas SQL directas del Servicio de Consultas a `shipmentDb`/`alertDb`.** El mismo problema del punto 2 aparece en `queryApi → shipmentDb` y `queryApi → alertDb`: es lectura, no escritura, así que es más tolerable (patrón común de "reporting reads" en CQRS), pero sigue acoplando `queryApi` al esquema interno de otros servicios. La corrección consistente sería que Envíos y Alertas también publiquen eventos de cambio de estado (harían falta, p. ej., `AlertaResuelta`) y que `queryApi` materialice su propia copia de envíos y alertas igual que ya hace con las lecturas — eliminando toda lectura SQL cruzada entre servicios. No aplicada todavía, pendiente de decisión.
+
+**4. Simplificación del C2 al alcance de un proyecto universitario.** El C2 original tenía 13 contenedores: app web, app móvil de conductor, API Gateway, broker MQTT y 9 más. Para un equipo de curso eso es más infraestructura de la que conviene sostener sin diluir el foco en los patrones que sí son objeto de evaluación (EDA, microservicios, CQRS, saga, DDD/hexagonal). Se simplificó a 9 contenedores sin renunciar a ningún patrón arquitectónico: **(a)** una sola **Aplicación Web** para operador, cliente y conductor — no hay justificación en las HU para dos clientes distintos; **(b)** sin **API Gateway** como contenedor propio — con un único cliente y solo dos servicios expuestos (Envíos, Consultas), el gateway no resuelve un problema real a esta escala, la app web les llama directo; **(c)** sin **broker MQTT** como contenedor propio — se modela como el listener MQTT embebido del Servicio de Ingesta, que sigue siendo el único punto de entrada de telemetría. Si el proyecto crece (más tipos de cliente, más servicios detrás del gateway), estas piezas se reintroducen sin tocar el resto del modelo.
