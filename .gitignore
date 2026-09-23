@@ -1,0 +1,5 @@
+# Ignorar todo el repositorio excepto la carpeta Docs
+*
+!.gitignore
+!Docs/
+!Docs/**
