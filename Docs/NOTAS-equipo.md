@@ -48,7 +48,7 @@ Recorrimos cada historia de usuario y anotamos qué evento de dominio produce, e
 | **Reynel Fabricio** | Lecturas de sensores | `Sensor` | `Lectura` — se descarta si no tiene envío asociado | `DeteccionFueraDeRangoService` — compara la lectura contra la condición requerida del envío |
 | **Tomás Useche** | Alertas e incidentes | `Alerta` | `SeveridadAlerta` — normal/crítica según lecturas consecutivas | `EscalamientoAlertaService` — marca crítica cuando varias lecturas seguidas están fuera de rango |
 
-## 4. Diagrama — Bounded Context events
+## 4.1 Diagrama — Bounded Context events
 
 ```mermaid
 flowchart LR
