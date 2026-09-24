@@ -1,22 +1,22 @@
 ﻿
 [INFO] Building cadena-de-frio-g6 0.0.1-SNAPSHOT
 [INFO] Running co.edu.uptc.cadena_de_frio_g6.alertas.AlertaFactoryTest
-[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.130 s -- in 
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.102 s -- in 
 co.edu.uptc.cadena_de_frio_g6.alertas.AlertaFactoryTest
 [INFO] Running co.edu.uptc.cadena_de_frio_g6.alertas.EscalamientoAlertaServiceTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in 
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in 
 co.edu.uptc.cadena_de_frio_g6.alertas.EscalamientoAlertaServiceTest
 [INFO] Running co.edu.uptc.cadena_de_frio_g6.alertas.SeveridadAlertaTest
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in 
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in 
 co.edu.uptc.cadena_de_frio_g6.alertas.SeveridadAlertaTest
 [INFO] Running co.edu.uptc.cadena_de_frio_g6.CadenaDeFrioG6ApplicationTests
-2026-09-24T09:56:10.995-05:00  INFO 2616 --- [cadena-de-frio-g6] [           main] 
-c.e.u.c.CadenaDeFrioG6ApplicationTests   : Started CadenaDeFrioG6ApplicationTests in 0.57 seconds (process running for 
-1.469)
+2026-09-24T10:42:07.603-05:00  INFO 33536 --- [cadena-de-frio-g6] [           main] 
+c.e.u.c.CadenaDeFrioG6ApplicationTests   : Started CadenaDeFrioG6ApplicationTests in 0.421 seconds (process running 
+for 1.19)
 Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of 
 the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: 
 https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
-[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.262 s -- in 
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.045 s -- in 
 co.edu.uptc.cadena_de_frio_g6.CadenaDeFrioG6ApplicationTests
 [INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS
