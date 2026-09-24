@@ -7,6 +7,7 @@ import java.util.UUID;
 /**
  * Raíz del Agregado del Bounded Context Alertas e Incidentes.
  * Referencia Envío y Sensor únicamente por su id: nunca carga esos agregados completos.
+ * Construir solo a través de {@link AlertaFactory}, dueña de la validación de negocio.
  */
 public class Alerta {
 
@@ -17,14 +18,10 @@ public class Alerta {
     private SeveridadAlerta severidad;
     private boolean resuelta;
 
-    public Alerta(UUID id, UUID envioId, UUID sensorId, Instant fechaGeneracion, SeveridadAlerta severidad) {
+    Alerta(UUID id, UUID envioId, UUID sensorId, Instant fechaGeneracion, SeveridadAlerta severidad) {
         Objects.requireNonNull(id, "El id de la alerta es obligatorio");
-        if (envioId == null) {
-            throw new EnvioRequeridoException();
-        }
-        if (sensorId == null) {
-            throw new SensorRequeridoException();
-        }
+        Objects.requireNonNull(envioId, "El id del envío es obligatorio");
+        Objects.requireNonNull(sensorId, "El id del sensor es obligatorio");
         Objects.requireNonNull(fechaGeneracion, "La fecha de generación es obligatoria");
         Objects.requireNonNull(severidad, "La severidad es obligatoria");
 
