@@ -9,14 +9,15 @@ import co.edu.uptc.cadena_de_frio_g6.alertas.EnvioRequeridoException;
 import co.edu.uptc.cadena_de_frio_g6.alertas.LecturasConsecutivasNegativasException;
 import co.edu.uptc.cadena_de_frio_g6.alertas.SensorRequeridoException;
 import co.edu.uptc.cadena_de_frio_g6.alertas.SeveridadInvalidaException;
-import co.edu.uptc.cadena_de_frio_g6.envios.EnvioConAlertasCriticasException;
-import co.edu.uptc.cadena_de_frio_g6.envios.EnvioId;
-import co.edu.uptc.cadena_de_frio_g6.envios.EstadoEnvio;
-import co.edu.uptc.cadena_de_frio_g6.envios.RangoHumedadInvalidoException;
-import co.edu.uptc.cadena_de_frio_g6.envios.RangoInvertidoException;
-import co.edu.uptc.cadena_de_frio_g6.envios.RangoSinAmplitudException;
-import co.edu.uptc.cadena_de_frio_g6.envios.TemperaturaNoFinitaException;
-import co.edu.uptc.cadena_de_frio_g6.envios.TransicionEnvioInvalidaException;
+import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioNoEncontradoException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioConAlertasCriticasException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioId;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EstadoEnvio;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoHumedadInvalidoException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoInvertidoException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoSinAmplitudException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.TemperaturaNoFinitaException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.TransicionEnvioInvalidaException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -104,6 +105,19 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<Map<String, Object>> respuesta = handler.manejarEnvioIdNoEsUuid(ex);
 
         verificar400(respuesta, ex.getMessage());
+    }
+
+    @Test
+    void traduceEnvioNoEncontradoAUn404ConSuMensaje() {
+        EnvioNoEncontradoException ex = new EnvioNoEncontradoException(new EnvioId("ENV-001"));
+
+        ResponseEntity<Map<String, Object>> respuesta = handler.manejarEnvioNoEncontrado(ex);
+
+        assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(respuesta.getBody())
+                .containsEntry("status", 404)
+                .containsEntry("error", "Not Found")
+                .containsEntry("mensaje", ex.getMessage());
     }
 
     @Test

@@ -1,5 +1,8 @@
-package co.edu.uptc.cadena_de_frio_g6.envios;
+package co.edu.uptc.cadena_de_frio_g6.envios.dominio;
 
+import jakarta.persistence.Embeddable;
+
+@Embeddable
 public record RangoTemperatura(double minimo, double maximo) {
 
     public RangoTemperatura {

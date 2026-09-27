@@ -1,8 +1,16 @@
-package co.edu.uptc.cadena_de_frio_g6.envios;
+package co.edu.uptc.cadena_de_frio_g6.envios.aplicacion;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.CondicionRequerida;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.Envio;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioId;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EstadoEnvio;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoHumedad;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoHumedadInvalidoException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoInvertidoException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoTemperatura;
 import org.junit.jupiter.api.Test;
 
 class EnvioFactoryTest {

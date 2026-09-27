@@ -1,9 +1,12 @@
-package co.edu.uptc.cadena_de_frio_g6.envios;
+package co.edu.uptc.cadena_de_frio_g6.envios.dominio;
+
+import jakarta.persistence.Embeddable;
 
 /**
  * Rango de humedad relativa, en porcentaje (0–100), que debe mantenerse durante el transporte.
  * Es un Value Object: se define solo por sus valores y es inmutable.
  */
+@Embeddable
 public record RangoHumedad(double minimo, double maximo) {
 
     public RangoHumedad {

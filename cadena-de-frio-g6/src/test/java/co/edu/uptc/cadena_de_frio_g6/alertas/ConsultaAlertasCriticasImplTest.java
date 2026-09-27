@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import co.edu.uptc.cadena_de_frio_g6.envios.EnvioId;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioId;
 
 class ConsultaAlertasCriticasImplTest {
 

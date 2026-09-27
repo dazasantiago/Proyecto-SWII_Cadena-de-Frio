@@ -1,4 +1,4 @@
-package co.edu.uptc.cadena_de_frio_g6.envios;
+package co.edu.uptc.cadena_de_frio_g6.envios.dominio;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

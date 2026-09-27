@@ -4,8 +4,8 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import co.edu.uptc.cadena_de_frio_g6.envios.ConsultaAlertasCriticas;
-import co.edu.uptc.cadena_de_frio_g6.envios.EnvioId;
+import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.ConsultaAlertasCriticas;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioId;
 
 /**
  * Implementa el puerto que Envíos define ({@link ConsultaAlertasCriticas}) con los datos de

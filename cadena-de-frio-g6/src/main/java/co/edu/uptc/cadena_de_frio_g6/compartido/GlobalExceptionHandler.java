@@ -9,12 +9,13 @@ import co.edu.uptc.cadena_de_frio_g6.alertas.EnvioRequeridoException;
 import co.edu.uptc.cadena_de_frio_g6.alertas.LecturasConsecutivasNegativasException;
 import co.edu.uptc.cadena_de_frio_g6.alertas.SensorRequeridoException;
 import co.edu.uptc.cadena_de_frio_g6.alertas.SeveridadInvalidaException;
-import co.edu.uptc.cadena_de_frio_g6.envios.EnvioConAlertasCriticasException;
-import co.edu.uptc.cadena_de_frio_g6.envios.RangoHumedadInvalidoException;
-import co.edu.uptc.cadena_de_frio_g6.envios.RangoInvertidoException;
-import co.edu.uptc.cadena_de_frio_g6.envios.RangoSinAmplitudException;
-import co.edu.uptc.cadena_de_frio_g6.envios.TemperaturaNoFinitaException;
-import co.edu.uptc.cadena_de_frio_g6.envios.TransicionEnvioInvalidaException;
+import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioNoEncontradoException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioConAlertasCriticasException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoHumedadInvalidoException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoInvertidoException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoSinAmplitudException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.TemperaturaNoFinitaException;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.TransicionEnvioInvalidaException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -68,6 +69,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EnvioIdNoEsUuidException.class)
     public ResponseEntity<Map<String, Object>> manejarEnvioIdNoEsUuid(EnvioIdNoEsUuidException ex) {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(EnvioNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> manejarEnvioNoEncontrado(EnvioNoEncontradoException ex) {
+        return construirRespuesta(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(EnvioConAlertasCriticasException.class)

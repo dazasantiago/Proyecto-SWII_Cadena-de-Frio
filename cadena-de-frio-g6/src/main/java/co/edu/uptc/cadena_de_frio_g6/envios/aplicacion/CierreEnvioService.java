@@ -1,5 +1,7 @@
-package co.edu.uptc.cadena_de_frio_g6.envios;
+package co.edu.uptc.cadena_de_frio_g6.envios.aplicacion;
 
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.Envio;
+import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioConAlertasCriticasException;
 import org.springframework.stereotype.Service;
 
 /**

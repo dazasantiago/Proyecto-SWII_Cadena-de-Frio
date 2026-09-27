@@ -1,4 +1,4 @@
-package co.edu.uptc.cadena_de_frio_g6.envios;
+package co.edu.uptc.cadena_de_frio_g6.envios.dominio;
 
 public class EnvioConAlertasCriticasException extends RuntimeException {
 
