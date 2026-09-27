@@ -20,7 +20,7 @@ class CierreEnvioServiceTest {
     void preparar() {
         consultaAlertasCriticas = mock(ConsultaAlertasCriticas.class);
         service = new CierreEnvioService(consultaAlertasCriticas);
-        envio = envioFactory.crear("ENV-001", 2.0, 8.0);
+        envio = envioFactory.crear("ENV-001", 2.0, 8.0, 60.0, 80.0);
         envio.iniciarTransporte();
     }
 
@@ -45,7 +45,7 @@ class CierreEnvioServiceTest {
 
     @Test
     void noCierraUnEnvioQueNoEstaEnTransito() {
-        Envio registrado = envioFactory.crear("ENV-002", 2.0, 8.0);
+        Envio registrado = envioFactory.crear("ENV-002", 2.0, 8.0, 60.0, 80.0);
         when(consultaAlertasCriticas.tieneAlertasCriticasSinResolver(registrado.id())).thenReturn(false);
 
         assertThatThrownBy(() -> service.cerrar(registrado))

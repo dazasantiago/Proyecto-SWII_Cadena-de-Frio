@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import co.edu.uptc.cadena_de_frio_g6.envios.EnvioConAlertasCriticasException;
+import co.edu.uptc.cadena_de_frio_g6.envios.RangoHumedadInvalidoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.RangoInvertidoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.RangoSinAmplitudException;
 import co.edu.uptc.cadena_de_frio_g6.envios.TemperaturaNoFinitaException;
@@ -30,6 +31,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RangoSinAmplitudException.class)
     public ResponseEntity<Map<String, Object>> manejarRangoSinAmplitud(RangoSinAmplitudException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(RangoHumedadInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> manejarRangoHumedadInvalido(RangoHumedadInvalidoException ex) {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 

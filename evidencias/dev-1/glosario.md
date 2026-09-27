@@ -51,6 +51,10 @@ Estos conceptos existen en el sistema, pero pertenecen a otro Bounded Context. E
 Los términos marcados aquí no vienen literalmente de los requisitos; son supuestos míos para dejar el modelo coherente.
 
 - **`EnvioIniciado` / `iniciarTransporte()`** no aparece en `NOTAS-equipo.md`. Hace falta porque la regla 3 habla de "una vez iniciado el transporte". Habría que añadirlo a la lista de eventos del equipo.
-- **`RangoHumedad`** como Value Object separado de `RangoTemperatura`: HU-01 pide ambos rangos, pero el equipo solo nombró el de temperatura.
 - **`ResumenCumplimiento`**: los requisitos no dicen qué contiene. Su contenido depende de cómo se cruce con Alertas y Lecturas.
 - **`Incidente`** dentro o fuera del Agregado `Envio`: pendiente para el paso 4.
+
+## 6. Resuelto en el paso 5 (Factory)
+
+- **`RangoHumedad`**: ya existe como Value Object separado de `RangoTemperatura` (HU-01 pedía ambos rangos). Valida que esté entre 0 y 100 y que el mínimo sea menor que el máximo; lanza `RangoHumedadInvalidoException`.
+- **`CondicionRequerida`**: ya existe como Value Object que agrupa `RangoTemperatura` + `RangoHumedad`. Es lo que `EnvioFactory.crear(...)` construye y lo que guarda `Envio`.

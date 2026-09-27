@@ -7,6 +7,7 @@ import java.util.Map;
 import co.edu.uptc.cadena_de_frio_g6.envios.EnvioConAlertasCriticasException;
 import co.edu.uptc.cadena_de_frio_g6.envios.EnvioId;
 import co.edu.uptc.cadena_de_frio_g6.envios.EstadoEnvio;
+import co.edu.uptc.cadena_de_frio_g6.envios.RangoHumedadInvalidoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.RangoInvertidoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.RangoSinAmplitudException;
 import co.edu.uptc.cadena_de_frio_g6.envios.TemperaturaNoFinitaException;
@@ -42,6 +43,15 @@ class GlobalExceptionHandlerTest {
         RangoSinAmplitudException ex = new RangoSinAmplitudException(5.0);
 
         ResponseEntity<Map<String, Object>> respuesta = handler.manejarRangoSinAmplitud(ex);
+
+        verificar400(respuesta, ex.getMessage());
+    }
+
+    @Test
+    void traduceRangoHumedadInvalidoAUn400ConSuMensaje() {
+        RangoHumedadInvalidoException ex = new RangoHumedadInvalidoException("humedad fuera de rango");
+
+        ResponseEntity<Map<String, Object>> respuesta = handler.manejarRangoHumedadInvalido(ex);
 
         verificar400(respuesta, ex.getMessage());
     }

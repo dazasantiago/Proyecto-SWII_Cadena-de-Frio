@@ -6,9 +6,12 @@ package co.edu.uptc.cadena_de_frio_g6.envios;
  */
 public class EnvioFactory {
 
-    public Envio crear(String id, double temperaturaMinima, double temperaturaMaxima) {
+    public Envio crear(String id, double temperaturaMinima, double temperaturaMaxima,
+            double humedadMinima, double humedadMaxima) {
         EnvioId envioId = new EnvioId(id);
-        RangoTemperatura condicionRequerida = new RangoTemperatura(temperaturaMinima, temperaturaMaxima);
+        CondicionRequerida condicionRequerida = new CondicionRequerida(
+                new RangoTemperatura(temperaturaMinima, temperaturaMaxima),
+                new RangoHumedad(humedadMinima, humedadMaxima));
         return new Envio(envioId, condicionRequerida);
     }
 }

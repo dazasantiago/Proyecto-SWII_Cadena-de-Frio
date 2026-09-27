@@ -11,16 +11,23 @@ class EnvioFactoryTest {
 
     @Test
     void creaUnEnvioRegistradoConSuCondicionRequerida() {
-        Envio envio = factory.crear("ENV-001", 2.0, 8.0);
+        Envio envio = factory.crear("ENV-001", 2.0, 8.0, 60.0, 80.0);
 
         assertThat(envio.id()).isEqualTo(new EnvioId("ENV-001"));
-        assertThat(envio.condicionRequerida()).isEqualTo(new RangoTemperatura(2.0, 8.0));
+        assertThat(envio.condicionRequerida()).isEqualTo(new CondicionRequerida(
+                new RangoTemperatura(2.0, 8.0), new RangoHumedad(60.0, 80.0)));
         assertThat(envio.estado()).isEqualTo(EstadoEnvio.REGISTRADO);
     }
 
     @Test
-    void noCreaUnEnvioConCondicionInvalida() {
-        assertThatThrownBy(() -> factory.crear("ENV-001", 8.0, 2.0))
+    void noCreaUnEnvioConTemperaturaInvalida() {
+        assertThatThrownBy(() -> factory.crear("ENV-001", 8.0, 2.0, 60.0, 80.0))
                 .isInstanceOf(RangoInvertidoException.class);
+    }
+
+    @Test
+    void noCreaUnEnvioConHumedadInvalida() {
+        assertThatThrownBy(() -> factory.crear("ENV-001", 2.0, 8.0, 60.0, 120.0))
+                .isInstanceOf(RangoHumedadInvalidoException.class);
     }
 }
