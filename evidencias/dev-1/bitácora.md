@@ -9,7 +9,7 @@ Registrar el tiempo **real** de cada paso y la fecha. Debe coincidir con el hist
 | 3 · Servicio de Dominio (`CierreEnvioService`) | ~35 min | 40 min | 2026-09-23 | 82564758029bafab1e18593ca137b852bcf23084 |
 | 4 · Límite del Agregado | ~15 min | 23 min | 2026-09-23 | e36ed19ea3807a906d6b7ea2313a11d484b6839e | 
 | 5 · Factory (`EnvioFactory`) | ~35 min | 34 min | 2026-09-23 | aa662866d47099ac271ad8a9321797516e5e9e2c |
-| 6 · Commit y Pull Request | ~5 min | | 2026-09-23 | |
+| 6 · Commit y Pull Request | ~5 min | | 2026-09-23 | a2e163c1a27acdd110d69dbc866a52febc67e371 |
 | **Total** | **~2 h 35 min** | | | |
  
 ## Observaciones
