@@ -4,6 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
 
+import co.edu.uptc.cadena_de_frio_g6.alertas.EnvioIdNoEsUuidException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.EnvioRequeridoException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.LecturasConsecutivasNegativasException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.SensorRequeridoException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.SeveridadInvalidaException;
 import co.edu.uptc.cadena_de_frio_g6.envios.EnvioConAlertasCriticasException;
 import co.edu.uptc.cadena_de_frio_g6.envios.EnvioId;
 import co.edu.uptc.cadena_de_frio_g6.envios.EstadoEnvio;
@@ -52,6 +57,51 @@ class GlobalExceptionHandlerTest {
         RangoHumedadInvalidoException ex = new RangoHumedadInvalidoException("humedad fuera de rango");
 
         ResponseEntity<Map<String, Object>> respuesta = handler.manejarRangoHumedadInvalido(ex);
+
+        verificar400(respuesta, ex.getMessage());
+    }
+
+    @Test
+    void traduceEnvioRequeridoAUn400ConSuMensaje() {
+        EnvioRequeridoException ex = new EnvioRequeridoException();
+
+        ResponseEntity<Map<String, Object>> respuesta = handler.manejarEnvioRequerido(ex);
+
+        verificar400(respuesta, ex.getMessage());
+    }
+
+    @Test
+    void traduceSensorRequeridoAUn400ConSuMensaje() {
+        SensorRequeridoException ex = new SensorRequeridoException();
+
+        ResponseEntity<Map<String, Object>> respuesta = handler.manejarSensorRequerido(ex);
+
+        verificar400(respuesta, ex.getMessage());
+    }
+
+    @Test
+    void traduceSeveridadInvalidaAUn400ConSuMensaje() {
+        SeveridadInvalidaException ex = new SeveridadInvalidaException("INVALIDA");
+
+        ResponseEntity<Map<String, Object>> respuesta = handler.manejarSeveridadInvalida(ex);
+
+        verificar400(respuesta, ex.getMessage());
+    }
+
+    @Test
+    void traduceLecturasConsecutivasNegativasAUn400ConSuMensaje() {
+        LecturasConsecutivasNegativasException ex = new LecturasConsecutivasNegativasException(-1);
+
+        ResponseEntity<Map<String, Object>> respuesta = handler.manejarLecturasConsecutivasNegativas(ex);
+
+        verificar400(respuesta, ex.getMessage());
+    }
+
+    @Test
+    void traduceEnvioIdNoEsUuidAUn400ConSuMensaje() {
+        EnvioIdNoEsUuidException ex = new EnvioIdNoEsUuidException(new EnvioId("ENV-001"));
+
+        ResponseEntity<Map<String, Object>> respuesta = handler.manejarEnvioIdNoEsUuid(ex);
 
         verificar400(respuesta, ex.getMessage());
     }

@@ -37,6 +37,14 @@ Estos conceptos existen en el sistema, pero pertenecen a otro Bounded Context. E
 | **Sensor** | Lecturas de Sensores | No aparece. |
 | **Alerta** y **severidad crítica** | Alertas e Incidentes | Solo mediante la pregunta "¿tiene este envío alertas críticas sin resolver?", que `CierreEnvioService` hace a través de una interfaz (`ConsultaAlertasCriticas`). |
 
+## 3.1. Contrato de identidad con Alertas (resuelto tras el merge de ambos subdominios)
+
+`ConsultaAlertasCriticas` ya tiene implementación real: `ConsultaAlertasCriticasImpl` (en el paquete `alertas`, ver `evidencias/dev-3/`). Para conectarla con `EnvioId` hizo falta un acuerdo de identidad entre los dos contextos, porque `Alerta.envioId` es un `UUID` y `EnvioId.valor()` es un `String` libre:
+
+- **Acuerdo:** `EnvioId.valor()` debe ser la representación en texto de un UUID (`UUID.toString()`), no un código arbitrario como `"ENV-001"`.
+- **Consecuencia:** los valores tipo `"ENV-001"` usados en los tests de los pasos 2 a 5 siguen siendo válidos para probar `Envio` de forma aislada, pero **no** funcionan si ese envío necesita cruzar al contexto de Alertas — ahí se traduce con `UUID.fromString(...)` y, si falla, `ConsultaAlertasCriticasImpl` lanza `EnvioIdNoEsUuidException`.
+- **Pendiente real:** `EnvioId` en sí mismo no valida que su valor sea un UUID — solo que no esté vacío. Sería más seguro que esa regla viviera en el propio Value Object en vez de descubrirse solo al cruzar a Alertas. No se cambió todavía para no invalidar la evidencia ya entregada de los pasos 1 a 5.
+
 ## 4. Términos que evitamos
 
 | Término | Por qué se evita |

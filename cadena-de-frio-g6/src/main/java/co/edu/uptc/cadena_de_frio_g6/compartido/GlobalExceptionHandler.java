@@ -4,6 +4,11 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import co.edu.uptc.cadena_de_frio_g6.alertas.EnvioIdNoEsUuidException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.EnvioRequeridoException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.LecturasConsecutivasNegativasException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.SensorRequeridoException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.SeveridadInvalidaException;
 import co.edu.uptc.cadena_de_frio_g6.envios.EnvioConAlertasCriticasException;
 import co.edu.uptc.cadena_de_frio_g6.envios.RangoHumedadInvalidoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.RangoInvertidoException;
@@ -36,6 +41,32 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RangoHumedadInvalidoException.class)
     public ResponseEntity<Map<String, Object>> manejarRangoHumedadInvalido(RangoHumedadInvalidoException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(EnvioRequeridoException.class)
+    public ResponseEntity<Map<String, Object>> manejarEnvioRequerido(EnvioRequeridoException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(SensorRequeridoException.class)
+    public ResponseEntity<Map<String, Object>> manejarSensorRequerido(SensorRequeridoException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(SeveridadInvalidaException.class)
+    public ResponseEntity<Map<String, Object>> manejarSeveridadInvalida(SeveridadInvalidaException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(LecturasConsecutivasNegativasException.class)
+    public ResponseEntity<Map<String, Object>> manejarLecturasConsecutivasNegativas(
+            LecturasConsecutivasNegativasException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(EnvioIdNoEsUuidException.class)
+    public ResponseEntity<Map<String, Object>> manejarEnvioIdNoEsUuid(EnvioIdNoEsUuidException ex) {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
