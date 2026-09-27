@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 
 class CierreEnvioServiceTest {
 
+    private final EnvioFactory envioFactory = new EnvioFactory();
+
     private ConsultaAlertasCriticas consultaAlertasCriticas;
     private CierreEnvioService service;
     private Envio envio;
@@ -18,7 +20,7 @@ class CierreEnvioServiceTest {
     void preparar() {
         consultaAlertasCriticas = mock(ConsultaAlertasCriticas.class);
         service = new CierreEnvioService(consultaAlertasCriticas);
-        envio = new Envio(new EnvioId("ENV-001"));
+        envio = envioFactory.crear("ENV-001", 2.0, 8.0);
         envio.iniciarTransporte();
     }
 
@@ -43,7 +45,7 @@ class CierreEnvioServiceTest {
 
     @Test
     void noCierraUnEnvioQueNoEstaEnTransito() {
-        Envio registrado = new Envio(new EnvioId("ENV-002"));
+        Envio registrado = envioFactory.crear("ENV-002", 2.0, 8.0);
         when(consultaAlertasCriticas.tieneAlertasCriticasSinResolver(registrado.id())).thenReturn(false);
 
         assertThatThrownBy(() -> service.cerrar(registrado))

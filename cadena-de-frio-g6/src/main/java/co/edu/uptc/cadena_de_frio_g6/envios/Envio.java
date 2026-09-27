@@ -4,15 +4,21 @@ package co.edu.uptc.cadena_de_frio_g6.envios;
 public class Envio {
 
     private final EnvioId id;
+    private final RangoTemperatura condicionRequerida;
     private EstadoEnvio estado;
 
-    public Envio(EnvioId id) {
+    Envio(EnvioId id, RangoTemperatura condicionRequerida) {
         this.id = id;
+        this.condicionRequerida = condicionRequerida;
         this.estado = EstadoEnvio.REGISTRADO;
     }
 
     public EnvioId id() {
         return id;
+    }
+
+    public RangoTemperatura condicionRequerida() {
+        return condicionRequerida;
     }
 
     public EstadoEnvio estado() {
