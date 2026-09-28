@@ -1,5 +1,7 @@
 package co.edu.uptc.cadena_de_frio_g6.envios.dominio;
 
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -12,6 +14,7 @@ import jakarta.persistence.Table;
 public class Envio {
 
     @EmbeddedId
+    @AttributeOverride(name = "valor", column = @Column(name = "id"))
     private EnvioId id;
 
     @Embedded

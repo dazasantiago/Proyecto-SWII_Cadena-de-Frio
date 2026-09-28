@@ -1,0 +1,21 @@
+services:
+  cadena-db:
+    image: postgres:16
+    container_name: cadena-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cadena_de_frio
+      POSTGRES_USER: cadena
+      POSTGRES_PASSWORD: cadena
+    ports:
+      - "5435:5432"
+    volumes:
+      - cadena-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cadena -d cadena_de_frio"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  cadena-db-data:
