@@ -4,7 +4,7 @@
 
 ## 1. `Alerta` es la raíz
 
-`Alerta` (`co.edu.uptc.cadena_de_frio_g6.alertas.Alerta`) es la única raíz de Agregado de este subdominio. No hay otras entidades dentro del agregado en esta entrega — `SeveridadAlerta` es un Value Object, no una entidad con identidad propia, así que vive **dentro** del agregado sin ser una raíz aparte.
+`Alerta` (`co.edu.uptc.cadena_de_frio_g6.alertas.dominio.Alerta`) es la única raíz de Agregado de este subdominio. No hay otras entidades dentro del agregado en esta entrega — `SeveridadAlerta` es un Value Object, no una entidad con identidad propia, así que vive **dentro** del agregado sin ser una raíz aparte.
 
 Todo acceso o modificación de una `Alerta` pasa por su propia API pública (`resolver()`) o por los servicios de dominio del mismo paquete (`EscalamientoAlertaService.evaluar(...)`, que llama al mutador `marcarComoCritica()`, de visibilidad de paquete). Nada fuera de `co.edu.uptc.cadena_de_frio_g6.alertas` puede cambiar la severidad de una alerta directamente.
 
@@ -36,5 +36,5 @@ Esto es deliberado, no una limitación de la entrega:
 
 ## 4. Qué falta fuera de este agregado (pendiente, no bloqueante para esta entrega)
 
-- Un puerto/interfaz (`ConsultaAlertasCriticas` o similar, ver `evidencias/dev-1/glosario.md`) para que `CierreEnvioService` (Dev 1) pregunte "¿hay alertas críticas sin resolver para este `envioId`?" sin acceder a la base de datos de Alertas directamente — coherente con la decisión de arquitectura documentada en `Docs/arquitectura/diagrama-c4.md` ("Corrección de diseño #2": `shipmentSvc → alertSvc` por REST, no por JDBC cruzado).
+- ~~Un puerto/interfaz para que `CierreEnvioService` (Dev 1) pregunte "¿hay alertas críticas sin resolver para este `envioId`?"~~ — implementado como `ConsultaAlertasCriticasUseCase` (`alertas.aplicacion`), servido por `AlertaService` y respaldado por el puerto secundario `AlertaRepository` (adaptador JPA en `alertas.infraestructura`). Sigue pendiente exponerlo por REST para que Dev 1 lo consuma sin JDBC cruzado, coherente con `Docs/arquitectura/diagrama-c4.md` ("Corrección de diseño #2").
 - La confirmación de si `Incidente` pertenece a este agregado o al de Envíos (ver `evidencias/dev-3/glosario.md`, §5) — por ahora `Alerta` no lo referencia de ninguna forma.
