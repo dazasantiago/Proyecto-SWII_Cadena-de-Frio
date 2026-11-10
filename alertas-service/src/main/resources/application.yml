@@ -1,0 +1,25 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: alertas-service
+  # Base de datos propia (Database per Service): nada que ver con la de cadena-de-frio-g6
+  datasource:
+    url: jdbc:postgresql://localhost:5436/alertas
+    username: alertas
+    password: alertas
+  jpa:
+    hibernate:
+      # El esquema lo crea Flyway (db/migration); Hibernate solo lo valida
+      ddl-auto: validate
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

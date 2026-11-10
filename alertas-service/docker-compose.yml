@@ -1,0 +1,21 @@
+services:
+  alertas-db:
+    image: postgres:16
+    container_name: alertas-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: alertas
+      POSTGRES_USER: alertas
+      POSTGRES_PASSWORD: alertas
+    ports:
+      - "5436:5432"
+    volumes:
+      - alertas-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alertas -d alertas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  alertas-db-data:
