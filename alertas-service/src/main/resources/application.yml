@@ -14,6 +14,11 @@ spring:
       # El esquema lo crea Flyway (db/migration); Hibernate solo lo valida
       ddl-auto: validate
     open-in-view: false
+  kafka:
+    bootstrap-servers: localhost:9094
+    consumer:
+      group-id: alertas-service
+      auto-offset-reset: earliest
 
 management:
   endpoints:
