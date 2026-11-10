@@ -1,4 +1,4 @@
-package co.edu.uptc.cadena_de_frio_g6.alertas.infraestructura;
+package co.edu.uptc.cadena_de_frio_g6.envios.infraestructura.salida.alertas;
 
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioId;
 
