@@ -1,0 +1,64 @@
+name: CI
+
+# Se ejecuta en cada push y en cada Pull Request
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Pruebas de ${{ matrix.servicio }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        servicio: [cadena-de-frio-g6, alertas-service]
+
+    # EnvioJpaRepositoryTest (cadena-de-frio-g6) usa una base PostgreSQL real en el puerto 5435,
+    # con los mismos datos que el docker-compose.yml del servicio.
+    services:
+      cadena-db:
+        image: postgres:16
+        env:
+          POSTGRES_DB: cadena_de_frio
+          POSTGRES_USER: cadena
+          POSTGRES_PASSWORD: cadena
+        ports:
+          - 5435:5432
+        options: >-
+          --health-cmd "pg_isready -U cadena -d cadena_de_frio"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.servicio }}
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v5
+
+      - name: Instalar Java 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: ${{ matrix.servicio }}/pom.xml
+
+      # Se excluyen las pruebas de arranque completo (*ApplicationTests): necesitan Kafka y todas
+      # las bases levantadas. Las pruebas unitarias y de persistencia sí se ejecutan.
+      - name: Ejecutar pruebas
+        run: sh ./mvnw -B -ntp test -Dtest='!*ApplicationTests' -Dsurefire.failIfNoSpecifiedTests=false
+
+  independencia:
+    name: Fitness function — ningún servicio usa el código de otro
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: alertas-service no importa cadena-de-frio-g6 y viceversa
+        run: |
+          if grep -rn "cadena_de_frio_g6" alertas-service/src; then
+            echo "alertas-service depende de cadena-de-frio-g6"; exit 1; fi
+          if grep -rn "alertas_service" cadena-de-frio-g6/src; then
+            echo "cadena-de-frio-g6 depende de alertas-service"; exit 1; fi
+          echo "OK: los servicios solo se comunican por HTTP y Kafka"

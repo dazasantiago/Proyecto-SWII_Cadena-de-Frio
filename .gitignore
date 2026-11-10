@@ -9,3 +9,6 @@
 !.mailmap
 !alertas-service/
 !alertas-service/**
+!README.md
+!.github/
+!.github/**
