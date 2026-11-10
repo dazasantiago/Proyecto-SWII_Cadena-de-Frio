@@ -4,11 +4,11 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import co.edu.uptc.cadena_de_frio_g6.alertas.EnvioIdNoEsUuidException;
-import co.edu.uptc.cadena_de_frio_g6.alertas.EnvioRequeridoException;
-import co.edu.uptc.cadena_de_frio_g6.alertas.LecturasConsecutivasNegativasException;
-import co.edu.uptc.cadena_de_frio_g6.alertas.SensorRequeridoException;
-import co.edu.uptc.cadena_de_frio_g6.alertas.SeveridadInvalidaException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.infraestructura.EnvioIdNoEsUuidException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.dominio.EnvioRequeridoException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.dominio.LecturasConsecutivasNegativasException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.dominio.SensorRequeridoException;
+import co.edu.uptc.cadena_de_frio_g6.alertas.dominio.SeveridadInvalidaException;
 import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioNoEncontradoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioConAlertasCriticasException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoHumedadInvalidoException;

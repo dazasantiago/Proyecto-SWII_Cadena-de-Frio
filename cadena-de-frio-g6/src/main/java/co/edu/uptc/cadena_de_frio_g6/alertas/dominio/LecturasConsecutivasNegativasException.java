@@ -1,4 +1,4 @@
-package co.edu.uptc.cadena_de_frio_g6.alertas;
+package co.edu.uptc.cadena_de_frio_g6.alertas.dominio;
 
 public class LecturasConsecutivasNegativasException extends RuntimeException {
 
