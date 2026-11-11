@@ -32,16 +32,19 @@ Restricciones reales:
 | `cadena-de-frio-g6` (Envíos) | Hexagonal + DDD (agregado `Envio`, value objects `RangoTemperatura`, `RangoHumedad`) | PostgreSQL `cadena-db` (Flyway) | Llama a Alertas por HTTP síncrono con Circuit Breaker | Integridad (regla de cierre) y testabilidad del dominio |
 | `alertas-service` (Alertas) | Microservicio + hexagonal + DDD (agregado `Alerta`, value object `SeveridadAlerta`) | PostgreSQL propio `alertas-db` (Database per Service) | Sirve HTTP; consume Kafka | Modificabilidad de la regla de escalamiento; disponibilidad independiente de Envíos |
 | Lecturas de sensores (`cadena-de-frio-g6/.../sensores`, rama `Lectura-Sensores`) | Hexagonal; productor de eventos | — (en el diseño objetivo, base de series de tiempo) | Publica `LecturaFueraDeRangoDetectada` en Kafka | Oportunidad de la alerta y escalabilidad del volumen de lecturas |
+| `eureka-server` | Service Registry (descubrimiento de servicios) | — | Cada servicio se registra con su nombre al arrancar | Modificabilidad del despliegue: nadie depende de una dirección escrita a mano |
 | `cadena-kafka` | EDA (publicar / suscribir) | Log de eventos | Tópico `sensores.lecturas-fuera-de-rango` + su `.DLT` | Desacoplamiento y durabilidad: ninguna lectura fuera de rango se pierde |
 | Consumidor de lecturas en Alertas | Idempotent Consumer + Dead Letter Topic + reintentos con backoff | Tabla `eventos_procesados` | Kafka | Integridad (un evento repetido no duplica alertas) y disponibilidad (un mensaje roto no detiene el consumidor) |
 | Consulta "¿alertas críticas sin resolver?" | Circuit Breaker + *fail-closed* | — | HTTP `GET /api/alertas/envios/{id}/criticas-sin-resolver` | Integridad (nunca se cierra sin saber) y disponibilidad (falla rápido si Alertas cae) |
 
 **Prueba de necesidad.** Cada fila responde a un problema concreto: Kafka existe porque el volumen
-de lecturas y la regla de "no perder ninguna" no se sostienen con llamadas HTTP una por una; el
+de lecturas y la regla de "no perder ninguna" no se sostienen con llamadas HTTP una por una; Eureka
+existe para que los servicios se encuentren por nombre y no por un puerto fijo; el
 consumidor idempotente existe porque Kafka entrega "al menos una vez"; el Circuit Breaker existe
 porque el cierre de un envío depende de otro proceso que puede estar caído. Descartamos estilos que
-no resolvían nada hoy: no hay API Gateway (un solo cliente y dos servicios) ni CQRS (las consultas
-de historial todavía no existen).
+no resolvían nada hoy: no hay API Gateway (un solo cliente y dos servicios de negocio) ni CQRS (las
+consultas de historial todavía no existen). Deuda reconocida: Envíos todavía llama a Alertas con
+la URL fija `alertas-service.url`; el siguiente paso es resolverla por nombre a través de Eureka.
 
 **Antipatrones revisados.** El C4 inicial (agosto) dibujaba al servicio de alertas leyendo
 directamente la base de datos de Envíos por JDBC: eso es una base de datos compartida, que acopla
@@ -60,6 +63,7 @@ flowchart LR
     subgraph sistema [Sistema de Cadena de Frío]
         envios["cadena-de-frio-g6<br/>Envíos · Spring Boot · :8080<br/>(incluye Lecturas de sensores)"]
         alertas["alertas-service<br/>Alertas · Spring Boot · :8082"]
+        eureka["eureka-server<br/>Registro de servicios · Spring Boot · :8761"]
         kafka[["cadena-kafka<br/>Apache Kafka · :9094"]]
         dbEnvios[("cadena-db<br/>PostgreSQL · envíos")]
         dbAlertas[("alertas-db<br/>PostgreSQL · alertas")]
@@ -72,6 +76,8 @@ flowchart LR
     kafka -- "Kafka · ASÍNCRONA<br/>consumidor idempotente + DLT" --> alertas
     envios -- "JDBC" --> dbEnvios
     alertas -- "JDBC" --> dbAlertas
+    envios -.->|"HTTP · registro al arrancar"| eureka
+    alertas -.->|"HTTP · registro al arrancar"| eureka
 ```
 
 Conexiones:
@@ -197,7 +203,8 @@ y el envío no se cierra (*fail-closed*).
 
 ## 6. Mesh: ¿lo necesitamos?
 
-**Service mesh: no.** Tenemos 2 servicios (3 cuando Lecturas de sensores se extraiga), un solo
+**Service mesh: no.** Tenemos 2 servicios de negocio más el registro Eureka (un tercero cuando
+Lecturas de sensores se extraiga), un solo
 equipo de 3 personas y ningún clúster de Kubernetes, que es donde un mesh (Istio, Linkerd) se
 instala. La única llamada entre servicios ya tiene su resiliencia en el código (Circuit Breaker y
 plazos en `ConsultaAlertasCriticasHttp`); con decenas de servicios y requisitos uniformes de mTLS y

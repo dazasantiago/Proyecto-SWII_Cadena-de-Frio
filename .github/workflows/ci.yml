@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        servicio: [cadena-de-frio-g6, alertas-service]
+        servicio: [eureka-server, cadena-de-frio-g6, alertas-service]
 
     # EnvioJpaRepositoryTest (cadena-de-frio-g6) usa una base PostgreSQL real en el puerto 5435,
     # con los mismos datos que el docker-compose.yml del servicio.
