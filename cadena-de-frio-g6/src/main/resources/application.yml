@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: cadena-de-frio-g6
+  # PostgreSQL en Docker (ver docker-compose.yml en la raiz de cadena-de-frio-g6)
+  datasource:
+    url: jdbc:postgresql://localhost:5435/cadena_de_frio
+    username: cadena
+    password: cadena
+  jpa:
+    hibernate:
+      # El esquema lo crea Flyway (db/migration); Hibernate solo lo valida
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+# alertas-service (extraido de este monolito): se le pregunta por HTTP antes de cerrar un envio
+alertas-service:
+  url: http://localhost:8082
+
+# Registro en Eureka (eureka-server, puerto 8761)
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka

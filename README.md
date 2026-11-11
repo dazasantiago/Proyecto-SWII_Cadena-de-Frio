@@ -9,6 +9,7 @@ en [`Docs/cierre/`](Docs/cierre/).
 |---|---|---|---|
 | Envíos (incluye Lecturas de sensores) | `cadena-de-frio-g6/` | 8080 | PostgreSQL `cadena-db` en el 5435 |
 | Alertas | `alertas-service/` | 8082 | PostgreSQL `alertas-db` en el 5436, Kafka `cadena-kafka` en el 9094 |
+| Registro de servicios (Eureka) | `eureka-server/` | 8761 | — |
 
 ## Requisitos
 
@@ -17,10 +18,17 @@ en [`Docs/cierre/`](Docs/cierre/).
 
 ## Levantar el sistema
 
-Abre dos terminales, una por servicio, desde la raíz del repositorio.
+Abre tres terminales, una por servicio, desde la raíz del repositorio y arráncalas en este orden.
 En Windows usa `mvnw.cmd` en lugar de `./mvnw`.
 
-**Terminal 1 — Alertas** (levanta su base y Kafka, y luego el servicio):
+**Terminal 1 — Registro de servicios (Eureka):**
+
+```bash
+cd eureka-server
+./mvnw spring-boot:run
+```
+
+**Terminal 2 — Alertas** (levanta su base y Kafka, y luego el servicio):
 
 ```bash
 cd alertas-service
@@ -28,7 +36,7 @@ docker compose up -d
 ./mvnw spring-boot:run
 ```
 
-**Terminal 2 — Envíos:**
+**Terminal 3 — Envíos:**
 
 ```bash
 cd cadena-de-frio-g6
@@ -45,6 +53,9 @@ curl http://localhost:8082/actuator/health
 ```
 
 Debe responder `{"status":"UP", ...}` con el componente `db` en `UP`.
+
+En el navegador, http://localhost:8761 muestra el panel de Eureka con `ALERTAS-SERVICE` y
+`CADENA-DE-FRIO-G6` registrados en `UP` (tarda unos 30 segundos en aparecer).
 
 Generar una alerta crítica (3 lecturas seguidas fuera de rango) y consultarla:
 
