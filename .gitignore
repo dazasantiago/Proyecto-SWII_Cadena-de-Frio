@@ -12,3 +12,5 @@
 !README.md
 !.github/
 !.github/**
+!eureka-server/
+!eureka-server/**
