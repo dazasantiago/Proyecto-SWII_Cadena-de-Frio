@@ -31,9 +31,9 @@ Restricciones reales:
 |---|---|---|---|---|
 | `cadena-de-frio-g6` (Envíos) | Hexagonal + DDD (agregado `Envio`, value objects `RangoTemperatura`, `RangoHumedad`) | PostgreSQL `cadena-db` (Flyway) | Llama a Alertas por HTTP síncrono con Circuit Breaker | Integridad (regla de cierre) y testabilidad del dominio |
 | `alertas-service` (Alertas) | Microservicio + hexagonal + DDD (agregado `Alerta`, value object `SeveridadAlerta`) | PostgreSQL propio `alertas-db` (Database per Service) | Sirve HTTP; consume Kafka | Modificabilidad de la regla de escalamiento; disponibilidad independiente de Envíos |
-| Lecturas de sensores (`cadena-de-frio-g6/.../sensores`, rama `Lectura-Sensores`) | Hexagonal; productor de eventos | — (en el diseño objetivo, base de series de tiempo) | Publica `LecturaFueraDeRangoDetectada` en Kafka | Oportunidad de la alerta y escalabilidad del volumen de lecturas |
+| Lecturas de sensores (`cadena-de-frio-g6/.../sensores`) | Hexagonal; detecta lecturas fuera de rango dentro del monolito | — (en el diseño objetivo, base de series de tiempo) | Hoy no se comunica con otros servicios. **Propuesta (ADR-004):** publicar `LecturaFueraDeRangoDetectada` en Kafka | Oportunidad de la alerta y escalabilidad del volumen de lecturas |
 | `eureka-server` | Service Registry (descubrimiento de servicios) | — | Cada servicio se registra con su nombre al arrancar | Modificabilidad del despliegue: nadie depende de una dirección escrita a mano |
-| `cadena-kafka` | EDA (publicar / suscribir) | Log de eventos | Tópico `sensores.lecturas-fuera-de-rango` + su `.DLT` | Desacoplamiento y durabilidad: ninguna lectura fuera de rango se pierde |
+| `cadena-kafka` | EDA (publicar / suscribir) | Log de eventos | Tópico `sensores.lecturas-fuera-de-rango` + su `.DLT`; hoy los eventos se publican a mano para pruebas | Desacoplamiento y durabilidad: ninguna lectura fuera de rango se pierde |
 | Consumidor de lecturas en Alertas | Idempotent Consumer + Dead Letter Topic + reintentos con backoff | Tabla `eventos_procesados` | Kafka | Integridad (un evento repetido no duplica alertas) y disponibilidad (un mensaje roto no detiene el consumidor) |
 | Consulta "¿alertas críticas sin resolver?" | Circuit Breaker + *fail-closed* | — | HTTP `GET /api/alertas/envios/{id}/criticas-sin-resolver` | Integridad (nunca se cierra sin saber) y disponibilidad (falla rápido si Alertas cae) |
 
@@ -55,6 +55,8 @@ Envíos → Alertas.
 ## 3. Diagrama de contenedores (C4)
 
 Solo aparecen los contenedores que existen hoy como carpeta o contenedor Docker del repositorio.
+Las flechas continuas están implementadas; la flecha punteada de Envíos a Kafka es una **propuesta**
+(ADR-004), todavía no está en el código.
 
 ```mermaid
 flowchart LR
@@ -72,7 +74,7 @@ flowchart LR
     operador -- "HTTPS/JSON · SÍNCRONA" --> envios
     operador -- "HTTPS/JSON · SÍNCRONA<br/>resolver alerta" --> alertas
     envios -- "HTTP GET criticas-sin-resolver<br/>· SÍNCRONA · Circuit Breaker" --> alertas
-    envios -- "Kafka · ASÍNCRONA<br/>LecturaFueraDeRangoDetectada" --> kafka
+    envios -.->|"PROPUESTA ADR-004 · Kafka · ASÍNCRONA<br/>LecturaFueraDeRangoDetectada"| kafka
     kafka -- "Kafka · ASÍNCRONA<br/>consumidor idempotente + DLT" --> alertas
     envios -- "JDBC" --> dbEnvios
     alertas -- "JDBC" --> dbAlertas
@@ -85,13 +87,13 @@ Conexiones:
 | Desde | Hacia | Tipo | Por qué |
 |---|---|---|---|
 | Envíos | Alertas | **Síncrona** (HTTP) | Para cerrar un envío se necesita la respuesta ya: consultar es síncrono. |
-| Lecturas de sensores | Alertas | **Asíncrona** (Kafka) | Propagar un hecho ("una lectura salió del rango") se puede procesar un instante después. |
+| Kafka (tópico de sensores) | Alertas | **Asíncrona** (Kafka) — implementada del lado de Alertas; el productor en sensores es **Propuesta** (ADR-004) | Propagar un hecho ("una lectura salió del rango") se puede procesar un instante después; no hace falta que Alertas responda en ese momento. |
 
 Eventos publicados:
 
 | Evento (en pasado) | Productor | Consumidores | Datos |
 |---|---|---|---|
-| `LecturaFueraDeRangoDetectada` | Lecturas de sensores | `alertas-service` | `envioId`, `sensorId`, `temperatura`, `humedad`, `fechaHora`, `lecturasFueraDeRangoConsecutivas` (clave del mensaje: `envioId`) |
+| `LecturaFueraDeRangoDetectada` | Lecturas de sensores (**Propuesta**, ADR-004; hoy se simula con `kafka-console-producer`) | `alertas-service` (implementado) | `envioId`, `sensorId`, `temperatura`, `humedad`, `fechaHora`, `lecturasFueraDeRangoConsecutivas` (clave del mensaje: `envioId`) |
 
 Capa anticorrupción: el adaptador `ConsultaAlertasCriticasHttp` de Envíos traduce entre su
 `EnvioId` (texto) y el UUID que usa Alertas; si el id no es un UUID, falla antes de llamar.
@@ -136,8 +138,9 @@ puede perderse (atributo 3). Kafka entrega cada mensaje "al menos una vez": tras
 reasignación de particiones un evento puede llegar dos veces, y un mensaje mal formado puede
 bloquear la partición si se reintenta sin fin.
 
-**Decisión.** Lecturas de sensores publica `LecturaFueraDeRangoDetectada` en el tópico
-`sensores.lecturas-fuera-de-rango`. Alertas lo consume registrando cada evento (tópico-partición-offset)
+**Decisión.** Alertas consume `LecturaFueraDeRangoDetectada` del tópico
+`sensores.lecturas-fuera-de-rango` (implementado; que Lecturas de sensores lo publique es la
+propuesta ADR-004, y mientras tanto los eventos se publican a mano para probar). Alertas lo consume registrando cada evento (tópico-partición-offset)
 en la tabla `eventos_procesados` **en la misma transacción** que la alerta: si el evento ya está, se
 ignora. Los mensajes imposibles de procesar (JSON roto, UUID inválido) van directo a
 `sensores.lecturas-fuera-de-rango.DLT`; los errores transitorios se reintentan 3 veces con espera
@@ -191,6 +194,33 @@ y el envío no se cierra (*fail-closed*).
   disponibilidad del cierre (compromiso consciente).
 - (−) El puerto de Envíos no cambió, pero ahora hay una dependencia de red que hay que configurar
   (`alertas-service.url`).
+
+### ADR-004: Extraer Lecturas de sensores y publicar sus eventos con Transactional Outbox
+
+- Estado: **Propuesta** (no implementada)
+- Fecha: 2026-11-11
+
+**Contexto.** La detección de lecturas fuera de rango (`DeteccionFueraDeRangoService`) vive hoy
+dentro de `cadena-de-frio-g6` y no publica nada: Alertas ya sabe consumir el evento (ADR-002),
+pero nadie lo produce. Además, el evento actual no trae cuántas lecturas seguidas van fuera de
+rango, y sin ese dato ninguna alerta escala a crítica.
+
+**Decisión propuesta.** Extraer `sensores-service` como servicio propio y publicar
+`LecturaFueraDeRangoDetectada` (con el campo `lecturasFueraDeRangoConsecutivas`) mediante un
+Transactional Outbox: el evento se guarda en una tabla en la misma transacción que la lectura y un
+proceso aparte lo envía a Kafka.
+
+**Alternativas descartadas.**
+- *Publicar directamente con `KafkaTemplate` desde el servicio de detección*: más simple, pero si
+  Kafka está caído en ese momento el evento se pierde (escritura dual).
+- *Que sensores llame a Alertas por HTTP*: acopla la disponibilidad de la ingesta, el contexto de
+  mayor volumen, a la de Alertas.
+
+**Consecuencias.**
+- (+) Cerraría el flujo de punta a punta sin perder eventos aunque Kafka caiga.
+- (−) Un servicio, una tabla outbox y un proceso de sondeo más que operar.
+- (−) Mientras no se implemente, el flujo real de alertas por lecturas solo se puede probar
+  publicando eventos a mano (riesgo R1).
 
 ## 5. Fitness functions
 

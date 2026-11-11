@@ -57,6 +57,32 @@ Debe responder `{"status":"UP", ...}` con el componente `db` en `UP`.
 En el navegador, http://localhost:8761 muestra el panel de Eureka con `ALERTAS-SERVICE` y
 `CADENA-DE-FRIO-G6` registrados en `UP` (tarda unos 30 segundos en aparecer).
 
+### Petición que cruza dos servicios: cerrar un envío
+
+Envíos no cierra un envío sin preguntarle antes a Alertas si tiene alertas críticas sin resolver.
+
+```bash
+# 1. Registrar un envío (Envíos) y ponerlo en tránsito
+curl -X POST http://localhost:8080/api/envios -H "Content-Type: application/json" \
+  -d '{"id":"44444444-4444-4444-4444-444444444444","temperaturaMinima":2,"temperaturaMaxima":8,"humedadMinima":40,"humedadMaxima":80}'
+curl -X POST http://localhost:8080/api/envios/44444444-4444-4444-4444-444444444444/iniciar-transporte
+
+# 2. Generar una alerta crítica para ese envío (Alertas). Guarda el "id" que devuelve.
+curl -X POST http://localhost:8082/api/alertas -H "Content-Type: application/json" \
+  -d '{"envioId":"44444444-4444-4444-4444-444444444444","sensorId":"22222222-2222-2222-2222-222222222222","lecturasFueraDeRangoConsecutivas":3}'
+
+# 3. Intentar cerrar el envío: Envíos le pregunta a Alertas → 409 "tiene alertas críticas sin resolver"
+curl -X POST http://localhost:8080/api/envios/44444444-4444-4444-4444-444444444444/cerrar
+
+# 4. Resolver la alerta (Alertas) y volver a cerrar → 200, "estado":"CERRADO"
+curl -X PATCH http://localhost:8082/api/alertas/<id-de-la-alerta>/resolver
+curl -X POST http://localhost:8080/api/envios/44444444-4444-4444-4444-444444444444/cerrar
+```
+
+Si `alertas-service` está apagado, el paso 3 responde **503**: el envío nunca se cierra sin verificar.
+
+### Otras pruebas de Alertas
+
 Generar una alerta crítica (3 lecturas seguidas fuera de rango) y consultarla:
 
 ```bash
