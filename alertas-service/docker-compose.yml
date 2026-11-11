@@ -1,0 +1,40 @@
+services:
+  alertas-db:
+    image: postgres:16
+    container_name: alertas-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: alertas
+      POSTGRES_USER: alertas
+      POSTGRES_PASSWORD: alertas
+    ports:
+      - "5436:5432"
+    volumes:
+      - alertas-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alertas -d alertas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Broker de eventos del proyecto (KRaft, sin ZooKeeper). Puerto 9094 en el equipo para no
+  # chocar con otros Kafka locales. Aquí llegan los eventos de sensores.
+  cadena-kafka:
+    image: apache/kafka:latest
+    container_name: cadena-kafka
+    restart: unless-stopped
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9094,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@cadena-kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+volumes:
+  alertas-db-data:

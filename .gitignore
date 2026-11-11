@@ -6,3 +6,9 @@
 !cadena-de-frio-g6/**
 !evidencias/
 !evidencias/**
+!.mailmap
+!alertas-service/
+!alertas-service/**
+!README.md
+!.github/
+!.github/**

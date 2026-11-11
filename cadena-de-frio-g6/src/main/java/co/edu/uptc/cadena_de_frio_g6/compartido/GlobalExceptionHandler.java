@@ -4,11 +4,6 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import co.edu.uptc.cadena_de_frio_g6.alertas.EnvioIdNoEsUuidException;
-import co.edu.uptc.cadena_de_frio_g6.alertas.EnvioRequeridoException;
-import co.edu.uptc.cadena_de_frio_g6.alertas.LecturasConsecutivasNegativasException;
-import co.edu.uptc.cadena_de_frio_g6.alertas.SensorRequeridoException;
-import co.edu.uptc.cadena_de_frio_g6.alertas.SeveridadInvalidaException;
 import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioNoEncontradoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioConAlertasCriticasException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoHumedadInvalidoException;
@@ -16,6 +11,8 @@ import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoInvertidoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoSinAmplitudException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.TemperaturaNoFinitaException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.TransicionEnvioInvalidaException;
+import co.edu.uptc.cadena_de_frio_g6.envios.infraestructura.salida.alertas.AlertasNoDisponiblesException;
+import co.edu.uptc.cadena_de_frio_g6.envios.infraestructura.salida.alertas.EnvioIdNoEsUuidException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -45,27 +42,6 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler(EnvioRequeridoException.class)
-    public ResponseEntity<Map<String, Object>> manejarEnvioRequerido(EnvioRequeridoException ex) {
-        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
-
-    @ExceptionHandler(SensorRequeridoException.class)
-    public ResponseEntity<Map<String, Object>> manejarSensorRequerido(SensorRequeridoException ex) {
-        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
-
-    @ExceptionHandler(SeveridadInvalidaException.class)
-    public ResponseEntity<Map<String, Object>> manejarSeveridadInvalida(SeveridadInvalidaException ex) {
-        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
-
-    @ExceptionHandler(LecturasConsecutivasNegativasException.class)
-    public ResponseEntity<Map<String, Object>> manejarLecturasConsecutivasNegativas(
-            LecturasConsecutivasNegativasException ex) {
-        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
-
     @ExceptionHandler(EnvioIdNoEsUuidException.class)
     public ResponseEntity<Map<String, Object>> manejarEnvioIdNoEsUuid(EnvioIdNoEsUuidException ex) {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
@@ -84,6 +60,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TransicionEnvioInvalidaException.class)
     public ResponseEntity<Map<String, Object>> manejarTransicionEnvioInvalida(TransicionEnvioInvalidaException ex) {
         return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(AlertasNoDisponiblesException.class)
+    public ResponseEntity<Map<String, Object>> manejarAlertasNoDisponibles(AlertasNoDisponiblesException ex) {
+        return construirRespuesta(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
     }
 
     private ResponseEntity<Map<String, Object>> construirRespuesta(HttpStatus estado, String mensaje) {
