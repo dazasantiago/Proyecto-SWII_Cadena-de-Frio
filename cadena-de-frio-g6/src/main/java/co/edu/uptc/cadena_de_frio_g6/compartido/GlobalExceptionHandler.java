@@ -62,6 +62,12 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    // Datos de entrada faltantes o inválidos (p. ej. un id de envío vacío) → 400, no 500
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> manejarArgumentoInvalido(IllegalArgumentException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(AlertasNoDisponiblesException.class)
     public ResponseEntity<Map<String, Object>> manejarAlertasNoDisponibles(AlertasNoDisponiblesException ex) {
         return construirRespuesta(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
