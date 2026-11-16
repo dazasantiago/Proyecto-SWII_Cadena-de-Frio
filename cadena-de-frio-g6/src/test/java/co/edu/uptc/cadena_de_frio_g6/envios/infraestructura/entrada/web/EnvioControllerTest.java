@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.CierreEnvioService;
 import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioFactory;
 import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioService;
+import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioYaRegistradoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.RepositorioEnvios;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.Envio;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioConAlertasCriticasException;
@@ -71,5 +72,32 @@ class EnvioControllerTest {
     void rechazaUnRegistroSinCondicionCompleta() {
         assertThatThrownBy(() -> controller.registrar(new RegistrarEnvioRequest(ID, 2.0, null, 40.0, 80.0)))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void rechazaUnIdQueNoEsUuidParaQueElEnvioNoQuedeSinPoderCerrarse() {
+        assertThatThrownBy(() -> controller.registrar(new RegistrarEnvioRequest("ENV-001", 2.0, 8.0, 40.0, 80.0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("UUID");
+        assertThatThrownBy(() -> controller.registrar(new RegistrarEnvioRequest(null, 2.0, 8.0, 40.0, 80.0)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void rechazaFormasNoCanonicasQueAlertasTomariaComoElMismoEnvio() {
+        assertThatThrownBy(() -> controller.registrar(new RegistrarEnvioRequest("1-1-1-1-1", 2.0, 8.0, 40.0, 80.0)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> controller.registrar(new RegistrarEnvioRequest(
+                "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA", 2.0, 8.0, 40.0, 80.0)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void noSobrescribeUnEnvioQueYaExiste() {
+        controller.registrar(pedido());
+        controller.iniciarTransporte(ID);
+
+        assertThatThrownBy(() -> controller.registrar(pedido())).isInstanceOf(EnvioYaRegistradoException.class);
+        assertThat(controller.buscar(ID).estado()).isEqualTo("EN_TRANSITO");
     }
 }

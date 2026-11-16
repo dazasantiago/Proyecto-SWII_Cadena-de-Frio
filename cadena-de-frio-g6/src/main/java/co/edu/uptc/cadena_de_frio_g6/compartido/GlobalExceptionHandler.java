@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioNoEncontradoException;
+import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioYaRegistradoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioConAlertasCriticasException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoHumedadInvalidoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoInvertidoException;
@@ -54,6 +55,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(EnvioConAlertasCriticasException.class)
     public ResponseEntity<Map<String, Object>> manejarEnvioConAlertasCriticas(EnvioConAlertasCriticasException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(EnvioYaRegistradoException.class)
+    public ResponseEntity<Map<String, Object>> manejarEnvioYaRegistrado(EnvioYaRegistradoException ex) {
         return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
     }
 

@@ -7,6 +7,7 @@ import java.util.Map;
 import co.edu.uptc.cadena_de_frio_g6.envios.infraestructura.salida.alertas.AlertasNoDisponiblesException;
 import co.edu.uptc.cadena_de_frio_g6.envios.infraestructura.salida.alertas.EnvioIdNoEsUuidException;
 import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioNoEncontradoException;
+import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioYaRegistradoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioConAlertasCriticasException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioId;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EstadoEnvio;
@@ -86,6 +87,15 @@ class GlobalExceptionHandlerTest {
         EnvioConAlertasCriticasException ex = new EnvioConAlertasCriticasException(new EnvioId("ENV-001"));
 
         ResponseEntity<Map<String, Object>> respuesta = handler.manejarEnvioConAlertasCriticas(ex);
+
+        verificar409(respuesta, ex.getMessage());
+    }
+
+    @Test
+    void traduceEnvioYaRegistradoAUn409ConSuMensaje() {
+        EnvioYaRegistradoException ex = new EnvioYaRegistradoException(new EnvioId("ENV-001"));
+
+        ResponseEntity<Map<String, Object>> respuesta = handler.manejarEnvioYaRegistrado(ex);
 
         verificar409(respuesta, ex.getMessage());
     }
