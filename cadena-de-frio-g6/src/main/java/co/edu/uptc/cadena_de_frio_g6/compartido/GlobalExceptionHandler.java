@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioNoEncontradoException;
+import co.edu.uptc.cadena_de_frio_g6.envios.aplicacion.EnvioYaRegistradoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EnvioConAlertasCriticasException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoHumedadInvalidoException;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.RangoInvertidoException;
@@ -57,9 +58,20 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(EnvioYaRegistradoException.class)
+    public ResponseEntity<Map<String, Object>> manejarEnvioYaRegistrado(EnvioYaRegistradoException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     @ExceptionHandler(TransicionEnvioInvalidaException.class)
     public ResponseEntity<Map<String, Object>> manejarTransicionEnvioInvalida(TransicionEnvioInvalidaException ex) {
         return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    // Datos de entrada faltantes o inválidos (p. ej. un id de envío vacío) → 400, no 500
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> manejarArgumentoInvalido(IllegalArgumentException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(AlertasNoDisponiblesException.class)

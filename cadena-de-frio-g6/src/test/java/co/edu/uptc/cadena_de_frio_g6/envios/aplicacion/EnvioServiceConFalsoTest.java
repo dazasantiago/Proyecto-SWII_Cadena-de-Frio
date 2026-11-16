@@ -1,6 +1,7 @@
 package co.edu.uptc.cadena_de_frio_g6.envios.aplicacion;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.Envio;
 import co.edu.uptc.cadena_de_frio_g6.envios.dominio.EstadoEnvio;
@@ -24,5 +25,20 @@ class EnvioServiceConFalsoTest {
 
         service.cerrar(registrado.id());
         assertThat(service.buscarPorId(registrado.id()).estado()).isEqualTo(EstadoEnvio.CERRADO);
+    }
+
+    @Test
+    void noRegistraDosVecesElMismoIdNiSobrescribeElEnvioExistente() {
+        EnvioService service = new EnvioService(new RepositorioEnviosFalso(), new EnvioFactory(),
+                new CierreEnvioService(envioId -> false));
+        Envio registrado = service.registrar("ENV-001", 2.0, 8.0, 60.0, 80.0);
+        service.iniciarTransporte(registrado.id());
+
+        assertThatThrownBy(() -> service.registrar("ENV-001", -20.0, -10.0, 10.0, 20.0))
+                .isInstanceOf(EnvioYaRegistradoException.class);
+
+        Envio actual = service.buscarPorId(registrado.id());
+        assertThat(actual.estado()).isEqualTo(EstadoEnvio.EN_TRANSITO);
+        assertThat(actual.condicionRequerida().rangoTemperatura().maximo()).isEqualTo(8.0);
     }
 }

@@ -20,8 +20,8 @@ Qué ganamos / qué cuesta:
   equipo para ponerlos en marcha.
 
 Principales riesgos y cómo los controlamos:
-1. Los sensores todavía no envían sus mediciones al sistema nuevo: es lo primero que haremos en
-   el mes que pedimos.
+1. El sistema ya recibe las mediciones y las convierte en alertas, pero con sensores simulados:
+   conectar los sensores reales es lo primero que haremos en el mes que pedimos.
 2. Si la parte de alertas se detiene, no se puede cerrar ningún envío. Lo aceptamos a propósito:
    preferimos retrasar un cierre a cerrar un envío dañado sin saberlo.
 

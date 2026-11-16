@@ -23,8 +23,9 @@ Cada escenario lleva dos letras: importancia para el negocio y dificultad para l
 cierre", el escenario se rompe sin que ninguna prueba de dominio lo note.
 
 **Oportunidad de la alerta (A/M).** Lo sostienen Kafka y el consumidor de `alertas-service`
-(ADR-002). Qué podría fallar: hoy sensores no publica en Kafka (los eventos se simulan), así que
-el escenario completo de punta a punta no se ha medido con el productor real.
+(ADR-002). Qué podría fallar: el flujo con el productor real (`sensores-service`) ya funciona de
+punta a punta (tres lecturas seguidas fuera de rango generan una alerta crítica), pero su tiempo
+todavía no se ha medido de forma sistemática.
 
 **Disponibilidad de la detección (A/M).** Lo sostiene que Kafka conserva los eventos y que el
 consumidor retoma desde su último offset. Qué podría fallar: hay un solo broker; si se cae Kafka
@@ -38,10 +39,10 @@ misma transacción que la alerta. Lo probamos: al reentregar todos los eventos, 
 
 | Tipo | Decisión | Efecto |
 |---|---|---|
-| **Riesgo** | Lecturas de sensores todavía no publica en Kafka y su evento no trae `lecturasFueraDeRangoConsecutivas`. | Ninguna alerta escala a crítica en el flujo real: el escenario de integridad pierde su origen. |
+| **Riesgo** | `sensores-service` guarda el contador de lecturas seguidas antes de publicar el evento (sin Outbox) y lo guarda en un archivo local. | Un reintento tras un fallo de Kafka cuenta dos veces la misma lectura, y el servicio de mayor volumen no puede tener más de una instancia. |
 | **Riesgo** | Un solo broker de Kafka sin réplicas. | Punto único de falla para la detección. |
 | **Riesgo** | Nadie vigila la Dead Letter Topic. | Un evento válido que falle por un error transitorio prolongado queda guardado pero olvidado. |
-| **Riesgo** | Envíos todavía no tiene controlador REST para cerrar envíos. | El escenario de integridad solo está probado con pruebas unitarias del adaptador, no de punta a punta. |
+| **Riesgo** | El cierre por HTTP (`POST /api/envios/{id}/cerrar`) solo se prueba a mano, con la demo del README. | Las respuestas 409 y 503 del escenario de integridad no tienen una prueba automática que pase por HTTP. |
 | **No-riesgo** | Idempotencia en la misma transacción que la alerta. | Un evento repetido nunca duplica alertas ni deja una alerta sin registrar. |
 | **No-riesgo** | Database per Service. | Un cambio de esquema en Envíos no puede romper a Alertas. |
 | **Sensibilidad** | Parámetros del Circuit Breaker (ventana 10, umbral 50 %, 10 s abierto) y plazos HTTP (2 s / 3 s). | Con plazos más largos el cierre se siente colgado; con un umbral muy bajo el circuito se abre por un solo error. |
@@ -51,11 +52,12 @@ misma transacción que la alerta. Lo probamos: al reentregar todos los eventos, 
 
 ## 4. Los 3 riesgos principales y su mitigación
 
-1. **Riesgo: el productor real de eventos no existe todavía** (sensores no publica en Kafka y el
-   evento no trae el conteo de lecturas seguidas).
-   **Mitigación:** extraer `sensores-service` y publicar el evento con un Outbox, agregando el campo
-   `lecturasFueraDeRangoConsecutivas`. Mientras tanto, el consumidor es un lector tolerante (si el
-   campo falta, cuenta 1) y el contrato está documentado en `ARQUITECTURA.md`.
+1. **Riesgo: escritura dual en el productor** (`sensores-service` guarda el contador antes de
+   publicar el evento en Kafka).
+   **Mitigación:** Transactional Outbox (alternativa pospuesta en ADR-004): guardar el contador y el
+   evento juntos y publicarlo desde un proceso aparte. Mientras tanto, el error tiende al lado
+   seguro: un reintento adelanta la alerta crítica en vez de retrasarla, y si Kafka no confirma, la
+   API responde 503 en unos 5 s para que el emisor sepa que debe reintentar.
 2. **Riesgo: Kafka es un punto único de falla.**
    **Mitigación:** aceptarlo en el entorno del curso (los eventos ya escritos no se pierden); en
    producción, 3 brokers con factor de replicación 3.

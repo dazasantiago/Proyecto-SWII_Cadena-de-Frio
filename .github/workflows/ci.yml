@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        servicio: [eureka-server, cadena-de-frio-g6, alertas-service]
+        servicio: [eureka-server, cadena-de-frio-g6, alertas-service, sensores-service]
 
     # EnvioJpaRepositoryTest (cadena-de-frio-g6) usa una base PostgreSQL real en el puerto 5435,
     # con los mismos datos que el docker-compose.yml del servicio.
@@ -55,10 +55,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: alertas-service no importa cadena-de-frio-g6 y viceversa
+      - name: ningún servicio importa paquetes de otro (Envíos, Alertas, Sensores)
         run: |
-          if grep -rn "cadena_de_frio_g6" alertas-service/src; then
-            echo "alertas-service depende de cadena-de-frio-g6"; exit 1; fi
-          if grep -rn "alertas_service" cadena-de-frio-g6/src; then
-            echo "cadena-de-frio-g6 depende de alertas-service"; exit 1; fi
+          revisar() { # revisar <carpeta> <paquete ajeno>
+            if grep -rnF "$2" "$1/src"; then echo "$1 depende de $2"; exit 1; fi
+          }
+          revisar alertas-service   co.edu.uptc.cadena_de_frio_g6
+          revisar alertas-service   co.edu.uptc.sensores
+          revisar cadena-de-frio-g6 co.edu.uptc.alertas_service
+          revisar cadena-de-frio-g6 co.edu.uptc.sensores
+          revisar sensores-service  co.edu.uptc.cadena_de_frio_g6
+          revisar sensores-service  co.edu.uptc.alertas_service
           echo "OK: los servicios solo se comunican por HTTP y Kafka"

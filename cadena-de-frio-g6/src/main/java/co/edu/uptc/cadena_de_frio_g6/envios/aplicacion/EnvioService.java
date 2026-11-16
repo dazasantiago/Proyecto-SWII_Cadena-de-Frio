@@ -36,6 +36,11 @@ public class EnvioService implements EnvioUseCase {
     public Envio registrar(String id, double temperaturaMinima, double temperaturaMaxima,
             double humedadMinima, double humedadMaxima) {
         Envio envio = envioFactory.crear(id, temperaturaMinima, temperaturaMaxima, humedadMinima, humedadMaxima);
+        // El id lo asigna quien registra: sin esta verificación, guardar() sobrescribiría un envío
+        // existente (por ejemplo, devolvería a REGISTRADO uno ya CERRADO).
+        if (repositorioEnvios.buscarPorId(envio.id()).isPresent()) {
+            throw new EnvioYaRegistradoException(envio.id());
+        }
         return repositorioEnvios.guardar(envio);
     }
 
