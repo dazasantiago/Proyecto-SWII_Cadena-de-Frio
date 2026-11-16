@@ -37,7 +37,7 @@ desincronizan.
 
 ## 5. ¿Se aplica? Parcialmente
 
-No tenemos 140 servicios: tenemos dos (tres cuando se extraiga sensores), y cada uno tiene un
+No tenemos 140 servicios: tenemos tres (Envíos, Alertas y Lecturas de sensores), y cada uno tiene un
 dominio distinto, con datos propios y un ritmo de cambio propio. Ahí la separación sí paga: Alertas
 cambia sus reglas sin tocar Envíos. Pero sí aplica como advertencia, y por eso descartamos la opción
 B de nuestra matriz (separar también ingesta, notificaciones y consultas): con tres personas

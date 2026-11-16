@@ -9,9 +9,9 @@
    (o una prueba ArchUnit equivalente).
    Cuándo: en cada push, como paso del CI.
 2. Regla: ningún servicio usa el código ni la base de datos de otro.
-   Se verifica con: `grep -r "cadena_de_frio_g6" alertas-service/src` y
-   `grep -r "alertas_service" cadena-de-frio-g6/src` deben salir vacíos; cada servicio tiene su propio
-   `docker-compose.yml` con su base.
+   Se verifica con: un `grep -rF` por cada par de servicios (por ejemplo, buscar
+   `co.edu.uptc.cadena_de_frio_g6` en `alertas-service/src` y `sensores-service/src`) debe salir
+   vacío; cada servicio con base tiene su propio `docker-compose.yml`.
    Cuándo: en cada push (CI) y al revisar cada Pull Request.
 3. Regla: el esquema de cada base lo cambia solo Flyway; una migración aplicada nunca se edita.
    Se verifica con: `spring.jpa.hibernate.ddl-auto=validate` en los dos servicios; la prueba de
@@ -36,8 +36,8 @@
 
 | Deuda | Por qué se aceptó | Riesgo | Revisión |
 |---|---|---|---|
-| Lecturas de sensores sigue dentro de `cadena-de-frio-g6` y no publica en Kafka | Se priorizó extraer Alertas, que tenía la regla de negocio más crítica | El flujo real de alertas no funciona de punta a punta | Al cerrar el semestre |
-| El evento no trae `lecturasFueraDeRangoConsecutivas` | El contrato se definió después de que sensores escribiera su evento | Ninguna alerta escala a crítica en el flujo real | Antes de integrar sensores |
+| `sensores-service` publica sin Transactional Outbox: guarda el contador antes de publicar | El Outbox exige una base y un proceso de sondeo; se priorizó tener el flujo completo funcionando | Un reintento tras un fallo de Kafka cuenta dos veces la misma lectura | Cuando sensores tenga base propia |
+| El contador de lecturas consecutivas vive en un archivo local | Sensores no tiene base todavía; el archivo basta para que un reinicio no lo ponga en cero | El servicio de mayor volumen no puede correr más de una instancia | Antes de escalar sensores |
 | El `.gitignore` raíz es una lista blanca: toda carpeta nueva queda ignorada hasta agregarla | Se configuró al inicio para no subir archivos del IDE | Que un servicio o el flujo de CI no se suban sin que nadie lo note | Ya; reemplazarlo por un `.gitignore` normal |
 | Nadie vigila la DLT | No hay herramienta de monitoreo en el curso | Eventos válidos olvidados en la DLT | Cuando se agregue observabilidad (métricas y alertas) |
 

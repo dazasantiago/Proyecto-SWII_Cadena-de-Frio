@@ -8,7 +8,7 @@ historial de Git (`git shortlog -sne --all`, con el `.mailmap` de la raíz).
 | Integrante | Usuario de Git | Subdominio | Carpeta / rama principal |
 |---|---|---|---|
 | Andrés Santiago Daza | `dazasantiago` | Envíos y condiciones (Dev 1) | `cadena-de-frio-g6/.../envios` |
-| Reynel Fabricio Rivera | `Reynel Rivera` | Lecturas de sensores (Dev 2) | rama `Lectura-Sensores`, `cadena-de-frio-g6/.../sensores` |
+| Reynel Fabricio Rivera | `Reynel Rivera` | Lecturas de sensores (Dev 2) | `sensores-service/` (ramas `Lectura-Sensores` y `codex/sensores-resiliencia`) |
 | Tomás Useche | `Tomas Useche` | Alertas e incidentes (Dev 3) | `alertas-service/` (rama `dev3/alertas-service`) |
 
 ## Documentos de arquitectura y cierre (Lecciones 12 y 13)

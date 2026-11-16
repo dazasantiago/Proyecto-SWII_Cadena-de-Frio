@@ -15,7 +15,7 @@ en [`Docs/cierre/`](Docs/cierre/).
 ## Requisitos
 
 - Java 25 (`java -version` debe mostrar 25 o superior).
-- Maven solo para `sensores-service`, que todavía no trae `mvnw`. Los demás servicios lo traen.
+- No hace falta instalar Maven: cada servicio trae `mvnw`.
 - Docker Desktop corriendo.
 
 ## Levantar el sistema
@@ -50,7 +50,7 @@ docker compose up -d
 
 ```bash
 cd sensores-service
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 Cada servicio termina de arrancar cuando su log muestra `Started ...Application`.
@@ -63,8 +63,8 @@ curl http://localhost:8082/actuator/health
 
 Debe responder `{"status":"UP", ...}` con el componente `db` en `UP`.
 
-En el navegador, http://localhost:8761 muestra el panel de Eureka con `ALERTAS-SERVICE` y
-`CADENA-DE-FRIO-G6` registrados en `UP` (tarda unos 30 segundos en aparecer).
+En el navegador, http://localhost:8761 muestra el panel de Eureka con `ALERTAS-SERVICE`,
+`CADENA-DE-FRIO-G6` y `SENSORES-SERVICE` registrados en `UP` (tarda unos 30 segundos en aparecer).
 
 ### Petición que cruza dos servicios: cerrar un envío
 
@@ -132,8 +132,6 @@ Con las bases levantadas (`docker compose up -d` en cada carpeta), desde la carp
 ```bash
 ./mvnw test
 ```
-
-En `sensores-service`, `mvn test` (todavía no trae `mvnw`).
 
 ## Detener todo
 

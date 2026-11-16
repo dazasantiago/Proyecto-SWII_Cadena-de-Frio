@@ -55,8 +55,7 @@ Envíos → Alertas.
 ## 3. Diagrama de contenedores (C4)
 
 Solo aparecen los contenedores que existen hoy como carpeta o contenedor Docker del repositorio.
-Las flechas punteadas son el registro en Eureka al arrancar; `sensores-service` todavía no se
-registra (riesgo R6).
+Las flechas punteadas son el registro en Eureka al arrancar.
 
 ```mermaid
 flowchart LR
@@ -85,6 +84,7 @@ flowchart LR
     sensores -- "archivo local" --> contador
     envios -.->|"HTTP · registro al arrancar"| eureka
     alertas -.->|"HTTP · registro al arrancar"| eureka
+    sensores -.->|"HTTP · registro al arrancar"| eureka
 ```
 
 Conexiones:
@@ -218,7 +218,9 @@ y sin ese dato ninguna alerta escalaba a crítica.
   (`SENSORES_CONTADOR_PATH`, montado como volumen) para que un reinicio no lo ponga en cero. Una
   lectura dentro del rango lo reinicia.
 - Publica `LecturaFueraDeRangoDetectada`, ya con `lecturasFueraDeRangoConsecutivas`, con
-  `KafkaTemplate` y **espera la confirmación** de Kafka (máximo 5 s). Si Kafka no confirma,
+  `KafkaTemplate` y **espera la confirmación** de Kafka (`SENSORES_KAFKA_TIMEOUT_MS`, 5 s por
+  defecto; el mismo plazo limita `max.block.ms`, que si no dejaría la petición bloqueada 60 s
+  esperando metadatos con Kafka caído). Si Kafka no confirma,
   responde 503: el evento no se pierde en silencio y el emisor sabe que debe reintentar.
 
 **Alternativas descartadas.**
@@ -237,14 +239,14 @@ y sin ese dato ninguna alerta escalaba a crítica.
 - (−) Escritura dual entre el contador y Kafka (riesgo R1).
 - (−) El contador en un archivo local limita el servicio a una sola instancia (riesgo R2).
 - (−) Sensores no consulta a Envíos: quien envía la lectura también envía los rangos, y pueden no
-  coincidir con los registrados (riesgo R7).
+  coincidir con los registrados (riesgo R6).
 
 ## 5. Fitness functions
 
 | # | Regla | Cómo se verifica | Cuándo |
 |---|---|---|---|
 | 1 | Las pruebas de cada servicio pasan (`mvnw test`), incluidas las del dominio sin Spring. | Flujo de CI con matriz por servicio (`.github/workflows`), igual que en los talleres. | En cada push y en cada Pull Request. |
-| 2 | Ningún servicio usa el código ni la base de otro: `alertas-service` no importa paquetes de `cadena_de_frio_g6` y viceversa. | `grep -r "cadena_de_frio_g6" alertas-service/src` y `grep -r "alertas_service" cadena-de-frio-g6/src` deben devolver vacío (paso del CI). | En cada push (CI). |
+| 2 | Ningún servicio usa el código ni la base de otro: Envíos, Alertas y Lecturas de sensores no importan paquetes entre sí. | Un `grep -rF` por cada par de servicios (por ejemplo, `co.edu.uptc.cadena_de_frio_g6` en `alertas-service/src` y `sensores-service/src`) debe devolver vacío (paso del CI). | En cada push (CI). |
 | 3 | El esquema de cada base lo controla Flyway: Hibernate solo valida. | `spring.jpa.hibernate.ddl-auto=validate` en los dos servicios; la prueba de arranque (`contextLoads`) falla si una entidad no coincide con su migración. | En cada `mvnw test`. |
 | 4 | Un evento repetido no genera alertas duplicadas. | Prueba `ProcesadorLecturasFueraDeRangoTest.unEventoYaProcesadoNoGeneraOtraAlerta`. | En cada `mvnw test`. |
 
@@ -269,5 +271,4 @@ cada servicio es dueño de su base (Database per Service) y comparte hechos por 
 | R3 | Nadie vigila la DLT: un mensaje que llegue ahí queda guardado pero sin aviso. | Métrica de mensajes en la DLT y alerta cuando sea mayor que cero. |
 | R4 | Con Alertas caído no se puede cerrar ningún envío (ADR-003, *fail-closed*). | Exponer el estado del circuito en `/actuator/health` y documentar el procedimiento de recuperación. |
 | R5 | Un solo broker de Kafka, sin réplicas: si cae, se detiene la llegada de alertas (aunque no se pierden los eventos ya escritos). | Aceptado para el curso; en producción, 3 brokers con factor de replicación 3. |
-| R6 | `sensores-service` no trae `mvnw`, no está en la matriz del CI ni en la fitness function de independencia, y no se registra en Eureka. Por eso nadie notó que su serializador de Kafka no funcionaba con Spring Boot 4 ni que sus pruebas no compilaban (corregido el 2026-11-16; `SerializacionEventoTest` lo vigila). | Agregarle `mvnw`, sumarlo a `ci.yml` (pruebas y `grep` de independencia) y agregar el cliente de Eureka. |
-| R7 | `sensores-service` no consulta a Envíos: la condición requerida llega en cada lectura, y si el emisor manda rangos distintos a los registrados, la detección usa los del emisor. | Que sensores guarde la condición de cada envío a partir de un evento `EnvioRegistrado` publicado por Envíos. |
+| R6 | `sensores-service` no consulta a Envíos: la condición requerida llega en cada lectura, y si el emisor manda rangos distintos a los registrados, la detección usa los del emisor. | Que sensores guarde la condición de cada envío a partir de un evento `EnvioRegistrado` publicado por Envíos. |
