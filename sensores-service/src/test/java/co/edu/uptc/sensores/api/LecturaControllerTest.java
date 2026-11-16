@@ -8,6 +8,7 @@ import co.edu.uptc.sensores.aplicacion.DeteccionFueraDeRangoService;
 import co.edu.uptc.sensores.aplicacion.IngestaLecturaService;
 import co.edu.uptc.sensores.aplicacion.LecturaFactory;
 import co.edu.uptc.sensores.aplicacion.SensorFactory;
+import co.edu.uptc.sensores.aplicacion.ContadorLecturasStore;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
@@ -17,7 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(LecturaController.class)
-@Import({IngestaLecturaService.class, DeteccionFueraDeRangoService.class, SensorFactory.class, LecturaFactory.class})
+@Import({IngestaLecturaService.class, DeteccionFueraDeRangoService.class, SensorFactory.class, LecturaFactory.class, ContadorLecturasStore.class})
 class LecturaControllerTest {
     @Autowired private MockMvc mvc;
     @MockitoBean private EventoLecturaPublisher publisher;
