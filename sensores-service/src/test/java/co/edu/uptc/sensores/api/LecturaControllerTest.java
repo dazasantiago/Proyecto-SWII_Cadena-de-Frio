@@ -31,4 +31,22 @@ class LecturaControllerTest {
                         """))
                 .andExpect(status().isAccepted());
     }
+
+    @Test
+    void rechazaLecturaSinTemperatura() throws Exception {
+        mvc.perform(post("/api/lecturas").contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"sensorId":"a5df56c2-9b6c-4c95-9272-bd7904be0c27","temperatura":null,"humedad":50}
+                        """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rechazaRangosInvertidos() throws Exception {
+        mvc.perform(post("/api/lecturas").contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"sensorId":"a5df56c2-9b6c-4c95-9272-bd7904be0c27","envioId":"fbfdd060-8c44-4ad8-9acb-7e50d91ce9d0","temperatura":9,"humedad":50,"temperaturaMinima":8,"temperaturaMaxima":2,"humedadMinima":30,"humedadMaxima":70}
+                        """))
+                .andExpect(status().isBadRequest());
+    }
 }
