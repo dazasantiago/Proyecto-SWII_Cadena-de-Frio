@@ -36,25 +36,29 @@ Los requisitos no funcionales del proyecto apuntan directamente a **EDA + micros
 ## C1 — Diagrama de Contexto
 
 ```mermaid
-C4Context
-    title Diagrama de Contexto - Sistema de Cadena de Frío (G6)
+---
+title: Diagrama de Contexto - Sistema de Cadena de Frío (G6)
+---
+flowchart TB
+    classDef person fill:#08427b,stroke:#052e56,color:#fff
+    classDef system fill:#1168bd,stroke:#0b4884,color:#fff
+    classDef external fill:#999999,stroke:#6b6b6b,color:#fff
 
-    Person(operador, "Operador logístico", "Registra envíos, monitorea alertas, cierra envíos, reporta incidentes")
-    Person(cliente, "Cliente", "Dueño de la carga: hace seguimiento y recibe alertas")
-    Person(conductor, "Conductor / transportista", "Transporta el contenedor")
-    System_Ext(sensorIot, "Sensor IoT", "Dispositivo embebido que mide temperatura y humedad del contenedor")
-    System(sistemaCadenaFrio, "Sistema de Cadena de Frío", "Monitorea condiciones de contenedores refrigerados y genera alertas automáticas de quiebre de cadena de frío")
-    System_Ext(notif, "Gateway de Notificaciones", "Servicio externo de push/email/SMS")
+    notif["<b>Gateway de Notificaciones</b><br/>[Sistema externo]<br/><br/>Servicio externo de push/email/SMS"]:::external
+    operador("<b>Operador logístico</b><br/>[Persona]<br/><br/>Registra envíos, monitorea alertas, cierra envíos, reporta incidentes"):::person
+    cliente("<b>Cliente</b><br/>[Persona]<br/><br/>Dueño de la carga: hace seguimiento y recibe alertas"):::person
+    conductor("<b>Conductor / transportista</b><br/>[Persona]<br/><br/>Transporta el contenedor"):::person
 
-    Rel(operador, sistemaCadenaFrio, "Registra envíos, consulta historial, cierra envíos, reporta incidentes", "HTTPS")
-    Rel(cliente, sistemaCadenaFrio, "Consulta estado y ubicación de su carga", "HTTPS")
-    Rel(conductor, sistemaCadenaFrio, "Consulta envío asignado", "HTTPS")
-    Rel(sensorIot, sistemaCadenaFrio, "Envía lecturas continuas de temperatura/humedad", "MQTT")
-    Rel(sistemaCadenaFrio, notif, "Envía alertas para despachar", "HTTPS/API")
-    Rel(notif, operador, "Notifica alerta en tiempo real", "Push/Email/SMS")
-    Rel(notif, cliente, "Notifica alerta en tiempo real", "Push/Email/SMS")
+    sensorIot["<b>Sensor IoT</b><br/>[Sistema externo]<br/><br/>Dispositivo embebido que mide temperatura y humedad del contenedor"]:::external
+    sistemaCadenaFrio["<b>Sistema de Cadena de Frío</b><br/>[Sistema de software]<br/><br/>Monitorea condiciones de contenedores refrigerados y genera alertas automáticas de quiebre de cadena de frío"]:::system
 
-    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+    operador -->|"Registra envíos, consulta<br/>historial, cierra envíos,<br/>reporta incidentes<br/>[HTTPS]"| sistemaCadenaFrio
+    cliente -->|"Consulta estado y<br/>ubicación de su carga<br/>[HTTPS]"| sistemaCadenaFrio
+    conductor -->|"Consulta envío asignado<br/>[HTTPS]"| sistemaCadenaFrio
+    sensorIot -->|"Envía lecturas continuas<br/>de temperatura/humedad<br/>[MQTT]"| sistemaCadenaFrio
+    sistemaCadenaFrio -->|"Envía alertas<br/>para despachar<br/>[HTTPS/API]"| notif
+    notif -.->|"Notifica alerta<br/>en tiempo real<br/>[Push/Email/SMS]"| operador
+    notif -.->|"Notifica alerta<br/>en tiempo real<br/>[Push/Email/SMS]"| cliente
 ```
 
 ## C2 — Diagrama de Contenedores (vista completa)
@@ -62,60 +66,66 @@ C4Context
 Versión simplificada para el alcance de un proyecto universitario: **una sola aplicación de usuario** (operador, cliente y conductor comparten la misma app web — no hay app móvil separada) y **sin API Gateway como contenedor propio**: la app web llama directamente a los dos servicios con los que interactúa una persona (Envíos y Consultas). El broker MQTT tampoco es un contenedor aparte — se modela como el listener MQTT embebido del Servicio de Ingesta, que es la única pieza que le habla a los sensores. Quedan 9 contenedores: 1 de interfaz, 4 servicios de dominio, el bus de eventos y 3 bases de datos.
 
 ```mermaid
-C4Container
-    title Diagrama de Contenedores - Sistema de Cadena de Frío (G6)
+---
+title: Diagrama de Contenedores - Sistema de Cadena de Frío (G6)
+config:
+  flowchart:
+    rankSpacing: 70
+    nodeSpacing: 40
+---
+flowchart TB
+    classDef person fill:#08427b,stroke:#052e56,color:#fff
+    classDef external fill:#999999,stroke:#6b6b6b,color:#fff
+    classDef container fill:#438dd5,stroke:#2e6295,color:#fff
+    classDef boundary fill:none,stroke:#444,stroke-width:1px,stroke-dasharray:6 4,color:#444
 
-    Person(operador, "Operador logístico")
-    Person(cliente, "Cliente")
-    Person(conductor, "Conductor / transportista")
-    System_Ext(sensorIot, "Sensor IoT")
-    System_Ext(notif, "Gateway de Notificaciones")
+    operador("<b>Operador logístico</b><br/>[Persona]"):::person
+    cliente("<b>Cliente</b><br/>[Persona]"):::person
+    conductor("<b>Conductor / transportista</b><br/>[Persona]"):::person
+    sensorIot["<b>Sensor IoT</b><br/>[Sistema externo]"]:::external
+    notif["<b>Gateway de Notificaciones</b><br/>[Sistema externo]"]:::external
 
-    System_Boundary(sistema, "Sistema de Cadena de Frío") {
-        Container(webApp, "Aplicación Web", "SPA (React/Angular)", "Dashboard de envíos, alertas e historial para operador y cliente; consulta del envío asignado para el conductor")
+    subgraph sistema["Sistema de Cadena de Frío [Sistema]"]
+        webApp["<b>Aplicación Web</b><br/>[Contenedor: SPA React/Angular]<br/><br/>Dashboard de envíos, alertas e historial para operador y cliente; envío asignado para el conductor"]:::container
+        ingestion["<b>Servicio de Ingesta</b><br/>[Contenedor: Spring Boot + listener MQTT embebido]<br/><br/>Recibe lecturas de los sensores y las publica en el bus"]:::container
+        shipmentSvc["<b>Servicio de Envíos</b><br/>[Contenedor: Spring Boot hexagonal]<br/><br/>Ciclo de vida del envío, condiciones requeridas, incidentes, saga de cierre"]:::container
+        alertSvc["<b>Servicio de Detección de Alertas</b><br/>[Contenedor: Spring Boot stream processor]<br/><br/>Evalúa cada lectura contra la condición requerida y genera alertas"]:::container
+        notifSvc["<b>Servicio de Notificaciones</b><br/>[Contenedor: Spring Boot]<br/><br/>Despacha alertas a operador y cliente en tiempo real"]:::container
+        queryApi["<b>Servicio de Consultas</b><br/>[Contenedor: Spring Boot]<br/><br/>Lado de lectura CQRS: historial, estado actual, dashboards"]:::container
+        broker["<b>Bus de Eventos</b><br/>[Contenedor: Apache Kafka]<br/><br/>LecturaRecibida, AlertaGenerada, EnvioRegistrado, EnvioCerrado"]:::container
+        shipmentDb[("<b>BD Envíos</b><br/>[Contenedor: PostgreSQL]<br/><br/>Envíos, condiciones requeridas, incidentes")]:::container
+        alertDb[("<b>BD Alertas</b><br/>[Contenedor: PostgreSQL]<br/><br/>Alertas y su estado de resolución")]:::container
+        tsDb[("<b>BD Series de Tiempo</b><br/>[Contenedor: TimescaleDB / InfluxDB]<br/><br/>Histórico de lecturas de sensores")]:::container
+    end
+    class sistema boundary
 
-        Container(ingestion, "Servicio de Ingesta", "Spring Boot + listener MQTT embebido", "Recibe lecturas directo de los sensores y las publica en el bus de eventos")
-        Container(shipmentSvc, "Servicio de Envíos", "Spring Boot (hexagonal)", "Ciclo de vida del envío, condiciones requeridas, incidentes, saga de cierre")
-        Container(alertSvc, "Servicio de Detección de Alertas", "Spring Boot (stream processor)", "Evalúa cada lectura contra la condición requerida y genera alertas")
-        Container(notifSvc, "Servicio de Notificaciones", "Spring Boot", "Despacha alertas a operador y cliente en tiempo real")
-        Container(queryApi, "Servicio de Consultas", "Spring Boot", "Lado de lectura CQRS: historial, estado actual, dashboards")
+    operador -->|"Usa<br/>[HTTPS]"| webApp
+    cliente -->|"Usa<br/>[HTTPS]"| webApp
+    conductor -->|"Usa<br/>[HTTPS]"| webApp
+    sensorIot -->|"Publica lecturas<br/>[MQTT]"| ingestion
 
-        Container(broker, "Bus de Eventos", "Apache Kafka", "LecturaRecibida, AlertaGenerada, EnvioRegistrado, EnvioCerrado")
+    webApp -->|"Registra/cierra envíos,<br/>reporta incidentes<br/>[HTTPS/JSON]"| shipmentSvc
+    webApp -->|"Consulta historial,<br/>estado, dashboards<br/>[HTTPS/JSON]"| queryApi
 
-        ContainerDb(shipmentDb, "BD Envíos", "PostgreSQL", "Envíos, condiciones requeridas, incidentes")
-        ContainerDb(alertDb, "BD Alertas", "PostgreSQL", "Alertas y su estado de resolución")
-        ContainerDb(tsDb, "BD Series de Tiempo", "TimescaleDB / InfluxDB", "Histórico de lecturas de sensores")
-    }
+    shipmentSvc -->|"Publica EnvioRegistrado /<br/>EnvioCerrado<br/>[Kafka]"| broker
+    ingestion -->|"Publica LecturaRecibida<br/>[Kafka]"| broker
 
-    Rel(operador, webApp, "Usa", "HTTPS")
-    Rel(cliente, webApp, "Usa", "HTTPS")
-    Rel(conductor, webApp, "Usa", "HTTPS")
-    Rel(sensorIot, ingestion, "Publica lecturas", "MQTT")
+    broker -->|"Consume LecturaRecibida<br/>[Kafka]"| alertSvc
+    alertSvc --->|"Lee condición requerida<br/>[JDBC]"| shipmentDb
+    alertSvc --->|"Persiste alerta<br/>[JDBC]"| alertDb
+    alertSvc -->|"Publica AlertaGenerada<br/>[Kafka]"| broker
 
-    Rel(webApp, shipmentSvc, "Registra/cierra envíos, reporta incidentes", "HTTPS/JSON")
-    Rel(webApp, queryApi, "Consulta historial, estado, dashboards", "HTTPS/JSON")
+    broker -->|"Consume AlertaGenerada<br/>[Kafka]"| notifSvc
+    notifSvc -->|"Envía notificación<br/>[HTTPS/API]"| notif
 
-    Rel(ingestion, broker, "Publica LecturaRecibida", "Kafka")
+    shipmentSvc --->|"Lee/escribe<br/>[JDBC]"| shipmentDb
+    shipmentSvc -->|"Consulta alertas críticas sin<br/>resolver (saga de cierre)<br/>[HTTPS/REST síncrono]"| alertSvc
 
-    Rel(broker, alertSvc, "Consume LecturaRecibida", "Kafka")
-    Rel(alertSvc, shipmentDb, "Lee condición requerida del envío", "JDBC")
-    Rel(alertSvc, alertDb, "Persiste alerta", "JDBC")
-    Rel(alertSvc, broker, "Publica AlertaGenerada", "Kafka")
-
-    Rel(broker, notifSvc, "Consume AlertaGenerada", "Kafka")
-    Rel(notifSvc, notif, "Envía notificación", "HTTPS/API")
-
-    Rel(shipmentSvc, shipmentDb, "Lee/escribe", "JDBC")
-    Rel(shipmentSvc, broker, "Publica EnvioRegistrado / EnvioCerrado", "Kafka")
-    Rel(shipmentSvc, alertSvc, "Consulta alertas críticas sin resolver (saga de cierre)", "HTTPS/REST síncrono")
-
-    Rel(broker, queryApi, "Consume LecturaRecibida, AlertaGenerada, EnvioRegistrado/Cerrado", "Kafka")
-    Rel(queryApi, tsDb, "Materializa histórico de lecturas", "Write API")
-    Rel(queryApi, tsDb, "Lee histórico", "SQL")
-    Rel(queryApi, shipmentDb, "Lee estado de envíos", "SQL")
-    Rel(queryApi, alertDb, "Lee alertas", "SQL")
-
-    UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")
+    broker -->|"Consume LecturaRecibida,<br/>AlertaGenerada,<br/>EnvioRegistrado/Cerrado<br/>[Kafka]"| queryApi
+    queryApi --->|"Lee estado de envíos<br/>[SQL]"| shipmentDb
+    queryApi --->|"Lee alertas<br/>[SQL]"| alertDb
+    queryApi --->|"Materializa histórico<br/>[Write API]"| tsDb
+    queryApi --->|"Lee histórico<br/>[SQL]"| tsDb
 ```
 
 Aun así, Kafka concentra 6 relaciones y mezcla el flujo síncrono (persona → app web → servicio) con el asíncrono (sensor → Kafka → consumidores), así que para lectura y presentación conviene usar las dos vistas enfocadas de C2a/C2b — el mismo modelo separado por pregunta ("¿cómo interactúa una persona?" vs. "¿cómo se convierte una lectura en una alerta?").
@@ -125,39 +135,46 @@ Aun así, Kafka concentra 6 relaciones y mezcla el flujo síncrono (persona → 
 Responde "¿cómo interactúa una persona con el sistema?": operador, cliente y conductor usan la misma app web, que llama directo a los servicios de Envíos y Consultas. Incluye la llamada síncrona de la saga de cierre (`shipmentSvc → alertSvc`).
 
 ```mermaid
-C4Container
-    title Vista C2a - Flujo de negocio (síncrono)
+---
+title: Vista C2a - Flujo de negocio (síncrono)
+config:
+  flowchart:
+    rankSpacing: 70
+    nodeSpacing: 40
+---
+flowchart TB
+    classDef person fill:#08427b,stroke:#052e56,color:#fff
+    classDef container fill:#438dd5,stroke:#2e6295,color:#fff
+    classDef boundary fill:none,stroke:#444,stroke-width:1px,stroke-dasharray:6 4,color:#444
 
-    Person(operador, "Operador logístico")
-    Person(cliente, "Cliente")
-    Person(conductor, "Conductor / transportista")
+    operador("<b>Operador logístico</b><br/>[Persona]"):::person
+    cliente("<b>Cliente</b><br/>[Persona]"):::person
+    conductor("<b>Conductor / transportista</b><br/>[Persona]"):::person
 
-    System_Boundary(sistema, "Sistema de Cadena de Frío") {
-        Container(webApp, "Aplicación Web", "SPA (React/Angular)", "Dashboard de envíos, alertas e historial; consulta del envío asignado para el conductor")
-        Container(shipmentSvc, "Servicio de Envíos", "Spring Boot (hexagonal)", "Ciclo de vida del envío, saga de cierre")
-        Container(alertSvc, "Servicio de Detección de Alertas", "Spring Boot (stream processor)", "Consultado por la saga de cierre")
-        Container(queryApi, "Servicio de Consultas", "Spring Boot", "Lado de lectura CQRS")
+    subgraph sistema["Sistema de Cadena de Frío [Sistema]"]
+        webApp["<b>Aplicación Web</b><br/>[Contenedor: SPA React/Angular]<br/><br/>Dashboard de envíos, alertas e historial; envío asignado para el conductor"]:::container
+        shipmentSvc["<b>Servicio de Envíos</b><br/>[Contenedor: Spring Boot hexagonal]<br/><br/>Ciclo de vida del envío, saga de cierre"]:::container
+        alertSvc["<b>Servicio de Detección de Alertas</b><br/>[Contenedor: Spring Boot stream processor]<br/><br/>Consultado por la saga de cierre"]:::container
+        queryApi["<b>Servicio de Consultas</b><br/>[Contenedor: Spring Boot]<br/><br/>Lado de lectura CQRS"]:::container
+        shipmentDb[("<b>BD Envíos</b><br/>[Contenedor: PostgreSQL]<br/><br/>Envíos, condiciones requeridas, incidentes")]:::container
+        alertDb[("<b>BD Alertas</b><br/>[Contenedor: PostgreSQL]<br/><br/>Alertas y su estado de resolución")]:::container
+        tsDb[("<b>BD Series de Tiempo</b><br/>[Contenedor: TimescaleDB / InfluxDB]<br/><br/>Histórico de lecturas de sensores")]:::container
+    end
+    class sistema boundary
 
-        ContainerDb(shipmentDb, "BD Envíos", "PostgreSQL", "Envíos, condiciones requeridas, incidentes")
-        ContainerDb(alertDb, "BD Alertas", "PostgreSQL", "Alertas y su estado de resolución")
-        ContainerDb(tsDb, "BD Series de Tiempo", "TimescaleDB / InfluxDB", "Histórico de lecturas de sensores")
-    }
+    operador -->|"Usa<br/>[HTTPS]"| webApp
+    cliente -->|"Usa<br/>[HTTPS]"| webApp
+    conductor -->|"Usa<br/>[HTTPS]"| webApp
 
-    Rel(operador, webApp, "Usa", "HTTPS")
-    Rel(cliente, webApp, "Usa", "HTTPS")
-    Rel(conductor, webApp, "Usa", "HTTPS")
+    webApp -->|"Registra/cierra envíos,<br/>reporta incidentes<br/>[HTTPS/JSON]"| shipmentSvc
+    webApp -->|"Consulta historial,<br/>estado, dashboards<br/>[HTTPS/JSON]"| queryApi
 
-    Rel(webApp, shipmentSvc, "Registra/cierra envíos, reporta incidentes", "HTTPS/JSON")
-    Rel(webApp, queryApi, "Consulta historial, estado, dashboards", "HTTPS/JSON")
+    shipmentSvc -->|"Consulta alertas críticas sin<br/>resolver (saga de cierre)<br/>[HTTPS/REST síncrono]"| alertSvc
+    shipmentSvc --->|"Lee/escribe<br/>[JDBC]"| shipmentDb
 
-    Rel(shipmentSvc, shipmentDb, "Lee/escribe", "JDBC")
-    Rel(shipmentSvc, alertSvc, "Consulta alertas críticas sin resolver (saga de cierre)", "HTTPS/REST síncrono")
-
-    Rel(queryApi, tsDb, "Lee histórico", "SQL")
-    Rel(queryApi, shipmentDb, "Lee estado de envíos", "SQL")
-    Rel(queryApi, alertDb, "Lee alertas", "SQL")
-
-    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+    queryApi --->|"Lee estado de envíos<br/>[SQL]"| shipmentDb
+    queryApi --->|"Lee alertas<br/>[SQL]"| alertDb
+    queryApi --->|"Lee histórico<br/>[SQL]"| tsDb
 ```
 
 ## C2b — Vista: Flujo de telemetría y alertas (event-driven)
@@ -165,58 +182,66 @@ C4Container
 Responde "¿cómo se convierte una lectura de sensor en una alerta notificada?": desde el sensor hasta la notificación, todo mediado por el bus de eventos. El sensor le habla directo al Servicio de Ingesta por MQTT (sin broker MQTT como contenedor aparte).
 
 ```mermaid
-C4Container
-    title Vista C2b - Flujo de telemetria y alertas (event-driven)
+---
+title: Vista C2b - Flujo de telemetría y alertas (event-driven)
+config:
+  flowchart:
+    rankSpacing: 70
+    nodeSpacing: 40
+---
+flowchart TB
+    classDef external fill:#999999,stroke:#6b6b6b,color:#fff
+    classDef container fill:#438dd5,stroke:#2e6295,color:#fff
+    classDef boundary fill:none,stroke:#444,stroke-width:1px,stroke-dasharray:6 4,color:#444
 
-    System_Ext(sensorIot, "Sensor IoT")
-    System_Ext(notif, "Gateway de Notificaciones")
+    sensorIot["<b>Sensor IoT</b><br/>[Sistema externo]"]:::external
+    notif["<b>Gateway de Notificaciones</b><br/>[Sistema externo]"]:::external
 
-    System_Boundary(sistema, "Sistema de Cadena de Frío") {
-        Container(ingestion, "Servicio de Ingesta", "Spring Boot + listener MQTT embebido", "Valida y publica lecturas")
-        Container(broker, "Bus de Eventos", "Apache Kafka", "LecturaRecibida, AlertaGenerada, EnvioRegistrado, EnvioCerrado")
-        Container(shipmentSvc, "Servicio de Envíos", "Spring Boot (hexagonal)", "Publica EnvioRegistrado/Cerrado")
-        Container(alertSvc, "Servicio de Detección de Alertas", "Spring Boot (stream processor)", "Evalúa lecturas y genera alertas")
-        Container(notifSvc, "Servicio de Notificaciones", "Spring Boot", "Despacha alertas en tiempo real")
-        Container(queryApi, "Servicio de Consultas", "Spring Boot", "Materializa vistas de lectura")
+    subgraph sistema["Sistema de Cadena de Frío [Sistema]"]
+        ingestion["<b>Servicio de Ingesta</b><br/>[Contenedor: Spring Boot + listener MQTT embebido]<br/><br/>Valida y publica lecturas"]:::container
+        shipmentSvc["<b>Servicio de Envíos</b><br/>[Contenedor: Spring Boot hexagonal]<br/><br/>Publica EnvioRegistrado/Cerrado"]:::container
+        broker["<b>Bus de Eventos</b><br/>[Contenedor: Apache Kafka]<br/><br/>LecturaRecibida, AlertaGenerada, EnvioRegistrado, EnvioCerrado"]:::container
+        alertSvc["<b>Servicio de Detección de Alertas</b><br/>[Contenedor: Spring Boot stream processor]<br/><br/>Evalúa lecturas y genera alertas"]:::container
+        notifSvc["<b>Servicio de Notificaciones</b><br/>[Contenedor: Spring Boot]<br/><br/>Despacha alertas en tiempo real"]:::container
+        queryApi["<b>Servicio de Consultas</b><br/>[Contenedor: Spring Boot]<br/><br/>Materializa vistas de lectura"]:::container
+        shipmentDb[("<b>BD Envíos</b><br/>[Contenedor: PostgreSQL]<br/><br/>Condición requerida del envío")]:::container
+        alertDb[("<b>BD Alertas</b><br/>[Contenedor: PostgreSQL]<br/><br/>Alertas y su estado de resolución")]:::container
+        tsDb[("<b>BD Series de Tiempo</b><br/>[Contenedor: TimescaleDB / InfluxDB]<br/><br/>Histórico de lecturas de sensores")]:::container
+    end
+    class sistema boundary
 
-        ContainerDb(shipmentDb, "BD Envíos", "PostgreSQL", "Condición requerida del envío")
-        ContainerDb(alertDb, "BD Alertas", "PostgreSQL", "Alertas y su estado de resolución")
-        ContainerDb(tsDb, "BD Series de Tiempo", "TimescaleDB / InfluxDB", "Histórico de lecturas de sensores")
-    }
+    sensorIot -->|"Publica lecturas<br/>[MQTT]"| ingestion
+    shipmentSvc -->|"Publica EnvioRegistrado /<br/>EnvioCerrado<br/>[Kafka]"| broker
+    ingestion -->|"Publica LecturaRecibida<br/>[Kafka]"| broker
 
-    Rel(sensorIot, ingestion, "Publica lecturas", "MQTT")
-    Rel(ingestion, broker, "Publica LecturaRecibida", "Kafka")
-    Rel(shipmentSvc, broker, "Publica EnvioRegistrado / EnvioCerrado", "Kafka")
+    broker -->|"Consume LecturaRecibida<br/>[Kafka]"| alertSvc
+    alertSvc --->|"Lee condición requerida<br/>[JDBC]"| shipmentDb
+    alertSvc --->|"Persiste alerta<br/>[JDBC]"| alertDb
+    alertSvc -->|"Publica AlertaGenerada<br/>[Kafka]"| broker
 
-    Rel(broker, alertSvc, "Consume LecturaRecibida", "Kafka")
-    Rel(alertSvc, shipmentDb, "Lee condición requerida del envío", "JDBC")
-    Rel(alertSvc, alertDb, "Persiste alerta", "JDBC")
-    Rel(alertSvc, broker, "Publica AlertaGenerada", "Kafka")
+    broker -->|"Consume AlertaGenerada<br/>[Kafka]"| notifSvc
+    notifSvc -->|"Envía notificación<br/>[HTTPS/API]"| notif
 
-    Rel(broker, notifSvc, "Consume AlertaGenerada", "Kafka")
-    Rel(notifSvc, notif, "Envía notificación", "HTTPS/API")
-
-    Rel(broker, queryApi, "Consume LecturaRecibida, AlertaGenerada, EnvioRegistrado/Cerrado", "Kafka")
-    Rel(queryApi, tsDb, "Materializa histórico de lecturas", "Write API")
-
-    UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")
+    broker -->|"Consume LecturaRecibida,<br/>AlertaGenerada,<br/>EnvioRegistrado/Cerrado<br/>[Kafka]"| queryApi
+    queryApi --->|"Materializa histórico<br/>[Write API]"| tsDb
 ```
 
 ## Notas de renderizado
 
-- GitHub y VS Code (extensión *Markdown Preview Mermaid Support* o *Mermaid Chart*) renderizan `C4Context`/`C4Container` de forma nativa.
+- Los diagramas están escritos como `flowchart` de Mermaid con estilo C4 (colores estándar de C4, tipo de elemento entre corchetes — `[Persona]`, `[Sistema externo]`, `[Contenedor: tecnología]` —, bases de datos como cilindros y la frontera del sistema como recuadro punteado). No se usa la sintaxis nativa `C4Context`/`C4Container` porque su motor de layout es experimental y coloca las etiquetas de las relaciones en el punto medio de cada flecha sin evitar colisiones: con muchas relaciones los textos quedaban encimados sobre cajas y sobre otras etiquetas. El motor de `flowchart` reserva espacio para cada etiqueta, así que no se solapan.
+- Se renderizan en GitHub, VS Code (*Markdown Preview Mermaid Support* o *Mermaid Chart*) y [mermaid.live](https://mermaid.live) sin plugins adicionales.
 - Si el destino final es un documento entregable (Word/PDF), exportar cada diagrama como imagen (p. ej. con [mermaid.live](https://mermaid.live)) y referenciarla en el `.md`, en vez de depender del render del visor.
-- Si el diagrama de vista completa (C2) sigue viéndose con muchos cruces en tu editor, prueba bajar `$c4ShapeInRow` a `3` y observar el resultado en vivo — el layout de Mermaid es heurístico, así que a veces hay que iterar el valor manualmente. Para lectura y presentación, las vistas C2a/C2b son la alternativa recomendada.
+- Detalles de layout que conviene conservar al editar: (a) en C1 el Gateway de Notificaciones se declara primero para que quede arriba y las personas no se desplacen hacia abajo por el ciclo sistema → gateway → persona; (b) las relaciones hacia bases de datos usan `--->` (flecha más larga) para que sus etiquetas tengan una franja propia y no choquen con los servicios; (c) en C2/C2b la relación `shipmentSvc → broker` se declara antes que `ingestion → broker` para que ambas etiquetas no se crucen. Las relaciones de notificación hacia personas (`-.->`) van punteadas para distinguir el canal push/email/SMS de las interacciones HTTPS.
 
 ## Verificación contra la guía del mini-curso C4
 
 Contrastado contra la síntesis de [MD/Guías y Material del Docente/Guía · Mini-curso_ El modelo C4 para documentar arquitectura de software.md](<../../MD/Guías y Material del Docente/Guía · Mini-curso_ El modelo C4 para documentar arquitectura de software.md>), usando el checklist de la sección 7 (errores comunes):
 
 - [x] Toda relación tiene verbo + tecnología entre corchetes cuando aporta valor (corregido: las dos relaciones `notif → operador/cliente` en C1 no tenían tecnología; se añadió `[Push/Email/SMS]`).
-- [x] Todo rol humano (operador, cliente, conductor) usa `Person`, nunca notación de sistema.
+- [x] Todo rol humano (operador, cliente, conductor) se dibuja como persona (`[Persona]`, con el color de persona de C4), nunca con notación de sistema.
 - [x] El nivel de Contexto (C1) no expone ningún contenedor ni tecnología interna — Kafka, MQTT, PostgreSQL y TimescaleDB solo aparecen desde C2 en adelante.
 - [x] Cada nivel responde solo su propia pregunta de zoom: C1 no descompone el sistema, C2 no entra a un solo contenedor (eso sería C3, aún no generado).
-- [x] Notación limitada al set que enseña la guía (`Person`, `System`/`System_Ext`, `Container`, `ContainerDb`, `Rel`) — se reemplazaron los `ContainerQueue` de Kafka/MQTT por `Container` simple, ya que el ejemplo propio del mini-curso (`Servicio de notificaciones [Contenedor: Cola + workers]`) modela colas como contenedor normal con la tecnología en el rótulo, no como una forma aparte.
+- [x] Notación limitada al set de elementos que enseña la guía (persona, sistema / sistema externo, contenedor, contenedor de base de datos, relación con verbo + tecnología) — cada caja declara su tipo entre corchetes. Kafka se modela como contenedor normal con la tecnología en el rótulo (no como forma de cola aparte), igual que el ejemplo propio del mini-curso (`Servicio de notificaciones [Contenedor: Cola + workers]`).
 
 No se generó todavía el nivel de Componentes (C3) ni las vistas complementarias (Despliegue, Dinámico) — quedan pendientes si se necesitan para una entrega específica.
 
